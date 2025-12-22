@@ -1,5 +1,5 @@
 /*
-雷达数据转换器节点
+雷达数据转换器节点：
 功能:
  * 1. 订阅 /radar_front 话题 (自定义的 nuscenes2bag/RadarObjects 消息)
  * 2. 提取 x, y, z 坐标
@@ -29,7 +29,7 @@ public:
         // 告诉 ROS Master，我们要“发布”一个新话题
         // 话题名: "/radar_front/pointcloud"
         // 消息类型: sensor_msgs::PointCloud2
-        // 队列大小: 10
+        // 队列大小: 10 （当发布速度 > 接收速度时，最多缓存多少条消息）
         pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/radar_front/pointcloud", 10);
 
         // 告诉 ROS Master，我们要“订阅”一个旧话题
