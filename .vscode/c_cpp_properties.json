@@ -1,0 +1,25 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/opt/ros/noetic/include/**",
+        "/home/qjj/桌面/nus2bag_ws/devel/include/**",
+        "/home/qjj/桌面/nus2bag_ws/src/nuscenes2rosbag/include/**",
+        "/home/qjj/桌面/nus2bag_ws/src/radar_camera_fusion/include/**",
+        "/home/qjj/桌面/nus2bag_ws/src/radar_converter/include/**",
+        "/home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

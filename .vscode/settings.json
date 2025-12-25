@@ -1,3 +1,12 @@
 {
-    "cmake.sourceDirectory": "/home/qjj/桌面/RV_Fusion_ws/src/rv_fusion"
+    "cmake.sourceDirectory": "/home/qjj/桌面/RV_Fusion_ws/src/rv_fusion",
+    "ros.distro": "noetic",
+    "python.autoComplete.extraPaths": [
+        "/home/qjj/桌面/nus2bag_ws/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/qjj/桌面/nus2bag_ws/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ]
 }
