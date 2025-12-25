@@ -1,0 +1,14 @@
+<launch>
+    <node pkg="radar_converter" type="radar_aggregator_node" name="radar_aggregator" output="screen" />
+
+    <node pkg="radar_converter" type="radar_cluster_node" name="radar_clustering" output="screen">
+        <param name="use_velocity" value="true" />
+        <param name="use_z_axis" value="false" />
+        
+        <param name="eps_dist" value="1.0" />
+        <param name="eps_vel" value="2.0" />
+        <param name="min_pts" value="3" />
+    </node>
+
+    <node pkg="rviz" type="rviz" name="rviz" />
+</launch>
