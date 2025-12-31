@@ -63,7 +63,7 @@ public:
     }
 
     timer_ = nh_.createTimer(ros::Duration(0.05), &RadarAggregator::timerCallback, this);
-    ROS_INFO("Optimized Radar Aggregator (TF2 Version) Started.");
+    ROS_INFO("Radar Aggregator Started.");
     }
 
     void radarCallback(const nuscenes2bag::RadarObjects::ConstPtr& msg, std::string topic_name){
@@ -141,8 +141,10 @@ public:
         pcl::toROSMsg(*cloud_to_publish, output_msg);
 
         output_msg.header.frame_id = "base_link";
-        // 修正时间戳
-        output_msg.header.stamp = (pub_stamp == ros::Time(0)) ? ros::Time::now() : pub_stamp;
+        // 发布时使用最新时间戳
+        output_msg.header.stamp = (pub_stamp == ros::Time(0)) 
+                        ? ros::Time::now()  // 无数据时用当前时间
+                        : pub_stamp;         // 有数据时用最新时间
 
         pub_surround_cloud_.publish(output_msg);
     }
