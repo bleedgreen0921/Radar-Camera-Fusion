@@ -330,3 +330,222 @@ if(use_vel_){
 ------
 
 # 雷达聚类节点代码详解
+
+- **输入**：聚合后的雷达点云（已转换到`base_link`坐标系）
+- **处理**：DBSCAN聚类算法
+- **输出**：可视化边界框（Rviz MarkerArray）
+- **作用**：将点云分割为独立障碍物，为后续跟踪、分类等提供基础
+
+```c++
+雷达原始数据 → 聚合节点 → 聚类节点 → 可视化/后续处理
+    ↓           ↓         ↓          ↓ 
+多雷达点云 → 统一坐标系 → DBSCAN聚类 → MarkerArray
+```
+
+------
+
+## 类定义与构造函数
+
+```cpp
+class RadarClusterNode {
+private:
+    ros::NodeHandle nh_;
+    ros::Subscriber sub_;
+    ros::Publisher pub_markers_;
+    std::shared_ptr<Dbscan> dbscan_;
+    pcl::PointCloud<PointType>::Ptr cloud_raw_;
+};
+```
+
+**成员变量分析**：
+
+| 变量           | 类型                 | 作用         | 设计考虑                           |
+| -------------- | -------------------- | ------------ | ---------------------------------- |
+| `nh_`          | `ros::NodeHandle`    | 私有节点句柄 | 使用`nh_("~")`初始化，支持私有参数 |
+| `sub_`         | `ros::Subscriber`    | 点云订阅者   | 订阅聚合后的点云                   |
+| `pub_markers_` | `ros::Publisher`     | 标记发布者   | 发布Rviz可视化结果                 |
+| `dbscan_`      | `shared_ptr<Dbscan>` | DBSCAN聚类器 | 使用智能指针，自动内存管理         |
+| `cloud_raw_`   | `PointCloud::Ptr`    | 原始点云     | 智能指针管理点云内存               |
+
+------
+
+## 点云回调函数
+
+```cpp
+void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg){
+        // 1. 转为 PCL 格式
+        pcl::fromROSMsg(*msg, *cloud_raw_); // 转换开销：O(n)，n为点云数量
+        if (cloud_raw_->empty()) return; // 空值检查
+
+        // 1. 直接输入原始点云 (算法内部会处理 Z 轴拍扁逻辑)
+        dbscan_->setInputCloud(cloud_raw_);
+
+        // 2. 执行聚类
+        std::vector<pcl::PointIndices> clusters;
+        dbscan_->extract(clusters);
+
+        // 3. 可视化
+        publishMarkers(clusters, cloud_raw_, msg->header);
+    }
+```
+
+**处理步骤分析：**
+
+1. **ROS到PCL转换**
+
+   ```
+pcl::fromROSMsg(*msg, *cloud_raw_);
+   ```
+   
+   - 将`sensor_msgs::PointCloud2`转换为PCL点云格式
+
+   - 转换开销：O(n)，n为点云数量
+
+   - 内存：创建点云副本
+
+2. **空值检查**
+
+   ```
+if (cloud_raw_->empty()) return;
+   ```
+   
+   - 避免对空点云进行聚类
+
+   - 提高系统鲁棒性
+
+3. **DBSCAN聚类**
+
+   ```
+dbscan_->setInputCloud(cloud_raw_);
+   dbscan_->extract(clusters);
+   ```
+   
+   - 时间复杂度：O(n log n) 平均情况
+
+   - 输出：`clusters`包含每个簇的点索引
+
+4. **结果可视化**
+
+   ```
+   publishMarkers(clusters, cloud_raw_, msg->header);
+   ```
+   
+   - 生成边界框并发布
+
+   - 保留原始消息头，确保时间戳和坐标系一致
+
+------
+
+## MarkerArray发布函数
+
+```cpp
+void publishMarkers(const std::vector<pcl::PointIndices>& indices, 
+                    pcl::PointCloud<PointType>::Ptr cloud, 
+                    std_msgs::Header header) {
+    visualization_msgs::MarkerArray marker_array;
+    
+    // [修复点] 1. 清空上一帧 (DELETEALL)
+    visualization_msgs::Marker clear_marker;
+    clear_marker.header = header; // 最好带上 header
+    // 【关键】必须与下面生成方框时的 ns 完全一致！
+    clear_marker.ns = "detected_objects"; 
+    clear_marker.action = visualization_msgs::Marker::DELETEALL;
+    marker_array.markers.push_back(clear_marker);
+    
+    visualization_msgs::Marker marker;
+    marker.header = header;
+    // 【关键】这里的 ns 必须是 "detected_objects"
+    marker.ns = "detected_objects";
+    marker.id = id++;
+    marker.type = visualization_msgs::Marker::CUBE;
+    marker.action = visualization_msgs::Marker::ADD;
+    // ...
+}
+```
+
+**Rviz Marker机制**：
+
+| Marker属性 | 作用               | 本实现设置                            |
+| ---------- | ------------------ | ------------------------------------- |
+| `header`   | 时间戳和坐标系     | 使用输入点云的header                  |
+| `ns`       | 命名空间，用于分组 | `"detected_objects"`                  |
+| `id`       | 唯一标识符         | 簇索引（0,1,2,...）                   |
+| `type`     | 几何类型           | `CUBE`（立方体）                      |
+| `action`   | 操作类型           | `ADD`（添加）/`DELETEALL`（删除所有） |
+| `pose`     | 位置和姿态         | 簇中心点，姿态为单位四元数            |
+| `scale`    | 尺寸               | 簇的边界框尺寸                        |
+| `color`    | 颜色               | 根据簇ID生成的HSV颜色                 |
+| `lifetime` | 生存时间           | 注释掉了，使用默认值                  |
+
+**关键设计：DELETEALL机制**
+
+```
+clear_marker.action = visualization_msgs::Marker::DELETEALL;
+```
+
+- **作用**：删除上一帧的所有标记，避免残留显示
+
+- **必要条件**：`ns`必须与要删除的标记一致
+
+
+**边界框计算**：
+
+```cpp
+PointType min_pt, max_pt;
+pcl::PointCloud<PointType>::Ptr temp(new pcl::PointCloud<PointType>);
+for (int idx : cluster.indices) temp->push_back(cloud->points[idx]);
+pcl::getMinMax3D(*temp, min_pt, max_pt);
+```
+
+**边界框属性计算**：
+
+```cpp
+// 中心点
+marker.pose.position.x = (min_pt.x + max_pt.x) / 2.0;
+marker.pose.position.y = (min_pt.y + max_pt.y) / 2.0;
+marker.pose.position.z = (min_pt.z + max_pt.z) / 2.0;
+
+// 尺寸（确保最小尺寸）
+marker.scale.x = std::max(0.5f, max_pt.x - min_pt.x);
+marker.scale.y = std::max(0.5f, max_pt.y - min_pt.y);
+marker.scale.z = std::max(0.5f, max_pt.z - min_pt.z);
+```
+
+**最小尺寸保护**：
+
+- 雷达点云稀疏，可能簇点很少
+- 最小尺寸0.5m确保可视化可见性
+- 避免边界框太小在Rviz中看不到
+
+## 性能与优化分析
+
+### 时间复杂度分析
+
+**回调函数各步骤耗时**：
+
+| 步骤         | 时间复杂度 | 备注                   |
+| ------------ | ---------- | ---------------------- |
+| ROS到PCL转换 | O(n)       | n为点云数量            |
+| DBSCAN聚类   | O(n log n) | 平均情况，最坏O(n²)    |
+| 边界框计算   | O(m × k)   | m为簇数，k为平均簇大小 |
+| Marker生成   | O(m)       | m为簇数                |
+| 总复杂度     | O(n log n) | 聚类是主要开销         |
+
+### 内存使用分析
+
+**主要内存消耗**：
+
+| 数据结构     | 大小                    | 生命周期     |
+| ------------ | ----------------------- | ------------ |
+| `cloud_raw_` | n × 16字节              | 每次回调     |
+| DBSCAN内部   | n × 4字节（标签）+ KD树 | 持续         |
+| 临时点云     | m × k × 16字节          | 边界框计算时 |
+| MarkerArray  | m × 200字节             | 发布时       |
+
+### 改进方向
+
+1. **性能优化**：异步处理，点云下采样
+2. **功能增强**：聚类过滤，统计信息
+3. **可观测性**：处理耗时监控，聚类质量评估
+4. **扩展性**：支持更多传感器，集成跟踪算法
+

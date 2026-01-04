@@ -17,7 +17,7 @@
 
 typedef pcl::PointXYZI PointType;
 
-// 【新增】辅助函数：将 HSV 转换为 RGB，用于生成不同颜色的方框
+// 辅助函数：将 HSV 转换为 RGB，用于生成不同颜色的方框
 void hsv2rgb(float h, float s, float v, float& r, float& g, float& b) {
     int i = int(h * 6);
     float f = h * 6 - i;
