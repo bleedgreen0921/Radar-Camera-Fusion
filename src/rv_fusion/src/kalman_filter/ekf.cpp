@@ -53,7 +53,8 @@ void ExtendedKalmanFilter::init(const Eigen::Vector4d& meas) {
     // Initialize Covariance P
     // High uncertainty for unobserved states (yaw_rate)
     P_.setIdentity();
-    P_(0,0) = 1.0; P_(1,1) = 1.0;
+    P_(0,0) = 1.0; 
+    P_(1,1) = 1.0;
     P_(2,2) = 5.0;
     P_(3,3) = 1.0;  
     P_(4,4) = 100.0; // Very uncertain about turn rate initially
@@ -92,21 +93,49 @@ void ExtendedKalmanFilter::predict(double dt) {
     double dt3 = dt2 * dt;
     double dt4 = dt3 * dt;
 
+    // 预计算方差 (Variance)
+    double var_a = std_a_ * std_a_;       // 线性加速度方差
+    double var_yawdd = std_yawdd_ * std_yawdd_; // 角加速度方差
+
+    double yaw = x_(3); // 使用当前的航向角
+    double c = cos(yaw);
+    double s = sin(yaw);
+
     // The Q matrix models the uncertainty in our "constant velocity/turn rate" assumption
     // We assume noise enters via linear acceleration (nu_a) and angular acceleration (nu_yawdd)
     Q_.setZero();
-    Q_(0, 0) = dt4 / 4 * std_a_ * std_a_;
-    Q_(0, 2) = dt3 / 2 * std_a_ * std_a_;
-    Q_(1, 1) = dt4 / 4 * std_a_ * std_a_;
-    Q_(1, 3) = dt3 / 2 * std_a_ * std_a_; // Note: Simplification, strictly depends on yaw
-    Q_(2, 0) = dt3 / 2 * std_a_ * std_a_;
-    Q_(2, 2) = dt2 * std_a_ * std_a_;
-    Q_(3, 3) = dt4 / 4 * std_yawdd_ * std_yawdd_;
-    Q_(3, 4) = dt3 / 2 * std_yawdd_ * std_yawdd_;
-    Q_(4, 3) = dt3 / 2 * std_yawdd_ * std_yawdd_;
-    Q_(4, 4) = dt2 * std_yawdd_ * std_yawdd_;
+
+    // 对角线元素 (Variance)
+    Q_(0, 0) = 0.25 * dt4 * var_a * c * c;   // px 的方差
+    Q_(1, 1) = 0.25 * dt4 * var_a * s * s;   // py 的方差
+    Q_(2, 2) = dt2 * var_a;                  // v 的方差
+
+    // 互相关项 (Covariance - Linear)
+    // px 与 py 的相关性 (因为它们共享同一个纵向加速度)
+    Q_(0, 1) = 0.25 * dt4 * var_a * c * s;
+    Q_(1, 0) = Q_(0, 1);
+
+    // px 与 v 的相关性
+    Q_(0, 2) = 0.5 * dt3 * var_a * c;
+    Q_(2, 0) = Q_(0, 2);
+
+    // py 与 v 的相关性
+    Q_(1, 2) = 0.5 * dt3 * var_a * s;
+    Q_(2, 1) = Q_(1, 2);
 
 
+    // --- Part 2: Angular Acceleration Noise (影响 yaw, yaw_rate) ---
+    // 这部分噪声与位置和速度是解耦的 (假设)
+
+    // 对角线元素
+    Q_(3, 3) = 0.25 * dt4 * var_yawdd; // yaw 的方差
+    Q_(4, 4) = dt2 * var_yawdd;        // yaw_rate 的方差
+
+    // 互相关项 (Covariance - Angular)
+    // yaw 与 yaw_rate 的相关性
+    Q_(3, 4) = 0.5 * dt3 * var_yawdd;
+    Q_(4, 3) = Q_(3, 4);
+    
     // --- 3. Calculate Jacobian F_j ---
     F_j_.setIdentity(); // Diagonal elements are 1.0
 

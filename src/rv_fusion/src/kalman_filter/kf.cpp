@@ -32,7 +32,12 @@ void Kalman_Filter::init(const Eigen::Vector4d& x_in){
 }
 
 void Kalman_Filter::predict(double dt){
-    // 1. 更新状态转移矩阵 F (CV模型: p = p + v*dt)
+    // 1. 更新状态转移矩阵 F (CV模型:假设速度恒定， p = p + v*dt)
+    // 矩阵形式：
+    // F = [{0 0 dt 0}, px​(k+1)​=px​(k)+vx​(k)Δt
+    //      {0 0 0 dt}, py​(k+1)=py​(k)+vy​(k)Δt
+    //      {0 0 1 0},  vx​(k+1)=vx​(k)
+    //      {0 0 0 1}]  vy​(k+1)=vy​(k)​
     F_(0,2) = dt;
     F_(1,3) = dt;
 
@@ -41,22 +46,32 @@ void Kalman_Filter::predict(double dt){
 
     // 3. 设置过程噪声 Q (表示物体可能会变加速，违背CV模型)
     // 使用离散白噪声模型
-    double noise_ax = 5.0; // 假设最大加速度扰动 5m/s^2
-    double noise_ay = 5.0;
+    // 1. 定义标准差 (Standard Deviation, sigma)
+    double std_ax = 5.0; 
+    double std_ay = 5.0;
+
+    // 2. 预计算方差 (Variance, sigma^2)
+    double var_ax = std_ax * std_ax; // 25.0
+    double var_ay = std_ay * std_ay; // 25.0
     
     double dt_2 = dt * dt;
     double dt_3 = dt_2 * dt;
     double dt_4 = dt_3 * dt;
 
     Q_.setZero();
-    Q_(0, 0) = dt_4 / 4 * noise_ax;
-    Q_(0, 2) = dt_3 / 2 * noise_ax;
-    Q_(1, 1) = dt_4 / 4 * noise_ay;
-    Q_(1, 3) = dt_3 / 2 * noise_ay;
-    Q_(2, 0) = dt_3 / 2 * noise_ax;
-    Q_(2, 2) = dt_2 * noise_ax;
-    Q_(3, 1) = dt_3 / 2 * noise_ay;
-    Q_(3, 3) = dt_2 * noise_ay;
+    
+    // 3. 使用方差填充 Q 矩阵
+    // X 轴部分
+    Q_(0, 0) = dt_4 / 4 * var_ax;
+    Q_(0, 2) = dt_3 / 2 * var_ax;
+    Q_(2, 0) = dt_3 / 2 * var_ax;
+    Q_(2, 2) = dt_2 * var_ax;
+
+    // Y 轴部分
+    Q_(1, 1) = dt_4 / 4 * var_ay;
+    Q_(1, 3) = dt_3 / 2 * var_ay;
+    Q_(3, 1) = dt_3 / 2 * var_ay;
+    Q_(3, 3) = dt_2 * var_ay;
 
     // 4. 预测协方差 P' = F*P*F^T + Q
     P_ = F_ * P_ * F_.transpose() + Q_;
