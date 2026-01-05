@@ -128,6 +128,7 @@ include_directories(
     include
     ${catkin_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
+    ${Eigen3_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -140,7 +141,7 @@ target_link_libraries(radar_aggregator_node
 ${catkin_LIBRARIES}
 ${PCL_LIBRARIES})
 
-add_executable(radar_cluster_node src/cluster/radar_cluster_node.cpp src/cluster/dbscan.cpp) 
+add_executable(radar_cluster_node src/cluster/radar_cluster_node.cpp src/cluster/dbscan.cpp src/kalman_filter/ekf.cpp) 
 target_link_libraries(radar_cluster_node
 ${catkin_LIBRARIES}
 ${PCL_LIBRARIES}

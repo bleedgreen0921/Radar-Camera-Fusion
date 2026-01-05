@@ -1496,6 +1496,33 @@ src/cluster/radar_cluster_node.cpp.s:
 	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/cluster/radar_cluster_node.cpp.s
 .PHONY : src/cluster/radar_cluster_node.cpp.s
 
+src/kalman_filter/ekf.o: src/kalman_filter/ekf.cpp.o
+
+.PHONY : src/kalman_filter/ekf.o
+
+# target to build an object file
+src/kalman_filter/ekf.cpp.o:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/kalman_filter/ekf.cpp.o
+.PHONY : src/kalman_filter/ekf.cpp.o
+
+src/kalman_filter/ekf.i: src/kalman_filter/ekf.cpp.i
+
+.PHONY : src/kalman_filter/ekf.i
+
+# target to preprocess a source file
+src/kalman_filter/ekf.cpp.i:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/kalman_filter/ekf.cpp.i
+.PHONY : src/kalman_filter/ekf.cpp.i
+
+src/kalman_filter/ekf.s: src/kalman_filter/ekf.cpp.s
+
+.PHONY : src/kalman_filter/ekf.s
+
+# target to generate assembly for a file
+src/kalman_filter/ekf.cpp.s:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/kalman_filter/ekf.cpp.s
+.PHONY : src/kalman_filter/ekf.cpp.s
+
 src/radar_aggregator/radar_aggregator_node.o: src/radar_aggregator/radar_aggregator_node.cpp.o
 
 .PHONY : src/radar_aggregator/radar_aggregator_node.o
@@ -1627,6 +1654,9 @@ help:
 	@echo "... src/cluster/radar_cluster_node.o"
 	@echo "... src/cluster/radar_cluster_node.i"
 	@echo "... src/cluster/radar_cluster_node.s"
+	@echo "... src/kalman_filter/ekf.o"
+	@echo "... src/kalman_filter/ekf.i"
+	@echo "... src/kalman_filter/ekf.s"
 	@echo "... src/radar_aggregator/radar_aggregator_node.o"
 	@echo "... src/radar_aggregator/radar_aggregator_node.i"
 	@echo "... src/radar_aggregator/radar_aggregator_node.s"

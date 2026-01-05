@@ -1,8 +1,8 @@
 /*
 雷达聚类节点：
- * 1. 订阅 /radar/surround_pointcloud
- * 2. 进行欧式聚类 (Euclidean Clustering)
- * 3. 发布 Bounding Boxes (MarkerArray) 到 Rviz
+ * 1. 订阅 /radar/surround_pointcloud (接收包含 vx/vy 的自定义点云)
+ * 2. 使用 DBSCAN 进行聚类 (基于 距离 + 速度差)
+ * 3. 发布检测结果可视化 (Box + ID)到 Rviz
 */
 
 #include <ros/ros.h>
@@ -11,12 +11,15 @@
 
 // PCL
 #include <pcl_ros/point_cloud.h>
+#include <pcl/point_types.h>
 #include <pcl/common/common.h>
+#include <pcl/common/centroid.h>
 
 #include "cluster/dbscan.h"
 #include "object_tracker/object_tracker.h"
+#include "common/point_types.h"
 
-typedef pcl::PointXYZI PointType;
+typedef rv_fusion::PointRadar PointType;
 
 // 辅助函数：将 HSV 转换为 RGB，用于生成不同颜色的方框
 void hsv2rgb(float h, float s, float v, float& r, float& g, float& b) {
@@ -61,8 +64,7 @@ public:
         cloud_raw_.reset(new pcl::PointCloud<PointType>);
 
         sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
-            "/radar/surround_pointcloud", 10, &RadarClusterNode::cloudCallback, this
-        );
+            "/radar/surround_pointcloud", 10, &RadarClusterNode::cloudCallback, this);
         pub_markers_ = nh_.advertise<visualization_msgs::MarkerArray>("/radar/detection_boxes", 10);
 
         ROS_INFO("Universal Cluster Node Started. Z-Axis: %s, Velocity: %s", 
@@ -71,80 +73,168 @@ public:
 
     void cloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg){
         // 1. 转为 PCL 格式
+        // [关键] 此时 PCL 会自动查找 vx_comp/vy_comp 并填入 cloud_raw_
         pcl::fromROSMsg(*msg, *cloud_raw_);
         if (cloud_raw_->empty()) return;
 
-        // 1. 直接输入原始点云 (算法内部会处理 Z 轴拍扁逻辑)
+        // 2. 直接输入原始点云 (算法内部会处理 Z 轴拍扁逻辑)
         dbscan_->setInputCloud(cloud_raw_);
 
-        // 2. 执行聚类
-        std::vector<pcl::PointIndices> clusters;
-        dbscan_->extract(clusters);
+        // 3. 执行聚类
+        std::vector<pcl::PointIndices> cluster_indices;
+        dbscan_->extract(cluster_indices);
 
-        // 3. 可视化
-        publishMarkers(clusters, cloud_raw_, msg->header);
+        // 4. 可视化
+        // 将原始点云传入，以便在可视化时读取点的 vx_comp/vy_comp
+        publishMarkers(cluster_indices, cloud_raw_, msg->header);
+
+        // --- 5. (预留) 调用 Tracker ---
+        // tracker_->update(cluster_indices, cloud_raw_, msg->header.stamp);
     }
 
-    void publishMarkers(const std::vector<pcl::PointIndices>& indices, 
+    void publishMarkers(const std::vector<pcl::PointIndices>& clusters, 
                         pcl::PointCloud<PointType>::Ptr cloud, 
                         std_msgs::Header header){
         visualization_msgs::MarkerArray marker_array;
         
-        // ---------------------------------------------------------
-        // [修复点] 1. 清空上一帧 (DELETEALL)
-        // ---------------------------------------------------------
+        // [重要] 1. 清除上一帧的 Markers
         visualization_msgs::Marker clear_marker;
-        clear_marker.header = header; // 最好带上 header
-        // 【关键】必须与下面生成方框时的 ns 完全一致！
-        clear_marker.ns = "detected_objects"; 
+        clear_marker.header = header;
+        clear_marker.ns = "detected_objects";
         clear_marker.action = visualization_msgs::Marker::DELETEALL;
         marker_array.markers.push_back(clear_marker);
 
-        int id = 0;
-        int cluster_count = indices.size(); // 获取总簇数
-        for (const auto& cluster : indices) {
+        // 清除速度箭头 namespace
+        visualization_msgs::Marker clear_arrow;
+        clear_arrow.header = header;
+        clear_arrow.ns = "velocity_arrows";
+        clear_arrow.action = visualization_msgs::Marker::DELETEALL;
+        marker_array.markers.push_back(clear_arrow);
+
+        int marker_id = 0;
+
+        // 2. 遍历每个簇生成可视化
+        for (const auto& indices : clusters) {
+            if (indices.indices.empty()) continue;
+
+            // --- A. 计算包围盒 (AABB) 和 平均速度 ---
             PointType min_pt, max_pt;
-            pcl::PointCloud<PointType>::Ptr temp(new pcl::PointCloud<PointType>);
-            for (int idx : cluster.indices) temp->push_back(cloud->points[idx]);
-            pcl::getMinMax3D(*temp, min_pt, max_pt);
+            min_pt.x = min_pt.y = min_pt.z = std::numeric_limits<float>::max();
+            max_pt.x = max_pt.y = max_pt.z = -std::numeric_limits<float>::max();
 
-            visualization_msgs::Marker marker;
-            marker.header = header;
-            // 【关键】这里的 ns 必须是 "detected_objects"
-            marker.ns = "detected_objects";
-            marker.id = id++;
-            marker.type = visualization_msgs::Marker::CUBE;
-            marker.action = visualization_msgs::Marker::ADD;
+            float sum_vx = 0.0f;
+            float sum_vy = 0.0f;
+            int point_count = indices.indices.size();
+
+            for (int idx : indices.indices) {
+                const auto& pt = cloud->points[idx];
+                
+                // 更新 AABB
+                if (pt.x < min_pt.x) min_pt.x = pt.x;
+                if (pt.y < min_pt.y) min_pt.y = pt.y;
+                if (pt.z < min_pt.z) min_pt.z = pt.z;
+                if (pt.x > max_pt.x) max_pt.x = pt.x;
+                if (pt.y > max_pt.y) max_pt.y = pt.y;
+                if (pt.z > max_pt.z) max_pt.z = pt.z;
+
+                // 累加速度分量 (这就是我们自定义 PointRadar 的好处！)
+                sum_vx += pt.vx_comp;
+                sum_vy += pt.vy_comp;
+            }
+
+            // 计算中心点和平均速度
+            float center_x = (min_pt.x + max_pt.x) / 2.0;
+            float center_y = (min_pt.y + max_pt.y) / 2.0;
+            float center_z = (min_pt.z + max_pt.z) / 2.0;
             
-            marker.pose.position.x = (min_pt.x + max_pt.x) / 2.0;
-            marker.pose.position.y = (min_pt.y + max_pt.y) / 2.0;
-            marker.pose.position.z = (min_pt.z + max_pt.z) / 2.0;
+            float avg_vx = sum_vx / point_count;
+            float avg_vy = sum_vy / point_count;
+            float speed = std::sqrt(avg_vx*avg_vx + avg_vy*avg_vy);
+
+            // --- B. 生成 Box Marker ---
+            visualization_msgs::Marker box_marker;
+            box_marker.header = header;
+            box_marker.ns = "detected_objects";
+            box_marker.id = marker_id++;
+            box_marker.type = visualization_msgs::Marker::CUBE;
+            box_marker.action = visualization_msgs::Marker::ADD;
+            box_marker.lifetime = ros::Duration(0.15); // 稍微长一点避免闪烁
+
+            box_marker.pose.position.x = center_x;
+            box_marker.pose.position.y = center_y;
+            box_marker.pose.position.z = center_z;
+
+            // 尺寸 (至少给一个最小值，防止扁平物体看不见)
+            box_marker.scale.x = std::max(0.5f, max_pt.x - min_pt.x);
+            box_marker.scale.y = std::max(0.5f, max_pt.y - min_pt.y);
+            box_marker.scale.z = std::max(0.5f, max_pt.z - min_pt.z);
+
+            box_marker.pose.orientation.w = 1.0;
             
-            marker.scale.x = std::max(0.5f, max_pt.x - min_pt.x);
-            marker.scale.y = std::max(0.5f, max_pt.y - min_pt.y);
-            marker.scale.z = std::max(0.5f, max_pt.z - min_pt.z);
-            
-            marker.pose.orientation.w = 1.0;
-            
-            // 【修改重点】根据簇 ID 生成不同的颜色
+            // 颜色生成 (基于 Cluster ID)
             float r, g, b;
-            // 核心思路：将 360度的色相环平分给每个簇
-            // 加上 id*0.618 是为了让相邻 ID 的颜色差异更大（黄金分割法）
-            float hue = fmod(id * 0.618034, 1.0); 
-            float saturation = 0.8; // 饱和度高一点，颜色鲜艳
-            float value = 1.0;      // 亮度最高
+            float hue = fmod(marker_id * 0.618034, 1.0);
+            hsv2rgb(hue, 0.7, 1.0, r, g, b);
+            box_marker.color.r = r;
+            box_marker.color.g = g;
+            box_marker.color.b = b;
+            box_marker.color.a = 0.5;
 
-            hsv2rgb(hue, saturation, value, r, g, b);
+            marker_array.markers.push_back(box_marker);
+            
+            // --- C. 生成 Text Marker (显示 ID 和 速度) ---
+            visualization_msgs::Marker text_marker;
+            text_marker.header = header;
+            text_marker.ns = "detected_objects";
+            text_marker.id = marker_id++;
+            text_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+            text_marker.action = visualization_msgs::Marker::ADD;
+            text_marker.lifetime = ros::Duration(0.15);
 
-            marker.color.r = r;
-            marker.color.g = g;
-            marker.color.b = b;
-            marker.color.a = 0.5; // 半透明
+            text_marker.pose.position.x = center_x;
+            text_marker.pose.position.y = center_y;
+            text_marker.pose.position.z = center_z + box_marker.scale.z/2.0 + 0.5; // 悬浮在上方
+            
+            text_marker.scale.z = 0.5; // 字体大小
+            text_marker.color.r = 1.0; text_marker.color.g = 1.0; text_marker.color.b = 1.0; text_marker.color.a = 1.0;
+            
+            char buffer[64];
+            snprintf(buffer, sizeof(buffer), "ID:%d\nV:%.1f", (marker_id/3), speed);
+            text_marker.text = buffer;
+            
+            marker_array.markers.push_back(text_marker);
 
-            // marker.lifetime = ros::Duration(0.1);
+            // --- D. 生成 Velocity Arrow Marker (速度矢量) ---
+            // 只有当速度大于一定阈值时才显示箭头
+            if (speed > 0.5) {
+                visualization_msgs::Marker arrow_marker;
+                arrow_marker.header = header;
+                arrow_marker.ns = "velocity_arrows";
+                arrow_marker.id = marker_id++;
+                arrow_marker.type = visualization_msgs::Marker::ARROW;
+                arrow_marker.action = visualization_msgs::Marker::ADD;
+                arrow_marker.lifetime = ros::Duration(0.15);
 
-            marker_array.markers.push_back(marker);
-            id++;
+                arrow_marker.pose.position.x = center_x;
+                arrow_marker.pose.position.y = center_y;
+                arrow_marker.pose.position.z = center_z;
+
+                // 计算四元数朝向
+                double yaw = std::atan2(avg_vy, avg_vx);
+                arrow_marker.pose.orientation.z = sin(yaw / 2.0);
+                arrow_marker.pose.orientation.w = cos(yaw / 2.0);
+
+                arrow_marker.scale.x = speed; // 长度代表速度大小
+                arrow_marker.scale.y = 0.2;   // 箭头宽
+                arrow_marker.scale.z = 0.2;   // 箭头高
+                
+                arrow_marker.color.r = 1.0; // 红色箭头
+                arrow_marker.color.a = 0.8;
+                
+                marker_array.markers.push_back(arrow_marker);
+            } else {
+                marker_id++; // 保持 ID 计数同步
+            }
         }
         pub_markers_.publish(marker_array);
     }

@@ -97,7 +97,6 @@ void ExtendedKalmanFilter::predict(double dt) {
     double var_a = std_a_ * std_a_;       // 线性加速度方差
     double var_yawdd = std_yawdd_ * std_yawdd_; // 角加速度方差
 
-    double yaw = x_(3); // 使用当前的航向角
     double c = cos(yaw);
     double s = sin(yaw);
 

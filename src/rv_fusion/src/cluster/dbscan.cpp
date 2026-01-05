@@ -1,6 +1,14 @@
 #include "cluster/dbscan.h"
 #include <cmath>
 
+// =========================================================================
+// [新增] 关键修复：引入 PCL 模板实现文件 (.hpp)
+// 必须包含这些文件，编译器才能为自定义点类型生成 KdTree 代码
+// =========================================================================
+#include <pcl/kdtree/impl/kdtree_flann.hpp>
+#include <pcl/search/impl/search.hpp>
+#include <pcl/search/impl/kdtree.hpp>
+
 // 构造函数：初始化参数和 KD-Tree 指针
 Dbscan::Dbscan(double eps_dist, double eps_vel, int min_pts, bool use_z, bool use_vel)
     : eps_dist_(eps_dist), eps_vel_(eps_vel), min_pts_(min_pts), use_z_(use_z), use_vel_(use_vel) {

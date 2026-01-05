@@ -3,6 +3,7 @@ file(REMOVE_RECURSE
   "/home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node.pdb"
   "CMakeFiles/radar_cluster_node.dir/src/cluster/dbscan.cpp.o"
   "CMakeFiles/radar_cluster_node.dir/src/cluster/radar_cluster_node.cpp.o"
+  "CMakeFiles/radar_cluster_node.dir/src/kalman_filter/ekf.cpp.o"
 )
 
 # Per-language clean rules from dependency scanning.
