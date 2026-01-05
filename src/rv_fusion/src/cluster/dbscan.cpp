@@ -1,4 +1,5 @@
 #include "cluster/dbscan.h"
+#include <cmath>
 
 // 构造函数：初始化参数和 KD-Tree 指针
 Dbscan::Dbscan(double eps_dist, double eps_vel, int min_pts, bool use_z, bool use_vel)
@@ -21,6 +22,7 @@ void Dbscan::setInputCloud(pcl::PointCloud<PointType>::Ptr cloud) {
 
     for(const auto& pt : input_cloud_->points){
         PointType pt_internal = pt;
+        // 这里的 pt 包含 vx_comp, vy_comp，直接赋值会被完整拷贝 (因为 PointType 现在是 PointRadar)
 
         if(!use_z_){
             pt_internal.z = 0.0f;
@@ -101,7 +103,7 @@ void Dbscan::extract(std::vector<pcl::PointIndices>& cluster_indices) {
     }
 }
 
-// 3. 带速度维度的邻域搜索 (这是你方案 3 的灵魂所在)
+// 3. 带速度维度的邻域搜索
 void Dbscan::getNeighbors(int index, std::vector<int>& neighbors) {
     std::vector<int> k_indices;
     std::vector<float> k_sqr_distances;
@@ -125,7 +127,7 @@ void Dbscan::getNeighbors(int index, std::vector<int>& neighbors) {
 
         if(use_vel_){
             // 假设 intensity 存储速度，进行加权距离计算
-            float vel_diff = std::abs(search_cloud_->points[idx].intensity - searchPoint.intensity);
+            float vel_diff = std::abs(search_cloud_->points[idx].velocity - searchPoint.velocity);
 
             // 归一化椭球距离公式
             float normalized_dist = (dist_sqr / (eps_dist_ * eps_dist_)) + 
@@ -137,8 +139,6 @@ void Dbscan::getNeighbors(int index, std::vector<int>& neighbors) {
         }
         else{
             // --- LiDAR 模式 (纯空间聚类) ---
-            // 直接接受 KD-Tree 的结果 (因为 KD-Tree 已经保证了 dist < eps_dist)
-            // 此时忽略 intensity (反射率)，防止把同一物体不同反射率的部分切开
             neighbors.push_back(idx);
         }
     }

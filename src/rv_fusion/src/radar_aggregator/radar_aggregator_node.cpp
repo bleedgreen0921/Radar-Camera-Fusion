@@ -4,6 +4,8 @@
  * 2. 使用 TF2 + Eigen 将点变换到车身坐标系
  * 3. 使用双缓冲 (Double Buffering) 无锁/低延迟聚合
  * 4. 修正输出时间戳
+ * 5. 将位置 (P) 和 速度向量 (V) 变换到 base_link
+ * 6. 发布包含 vx_comp, vy_comp 的自定义 PCL 点云
 */
 
 #include <ros/ros.h> 
@@ -23,8 +25,10 @@
 
 // 线程与同步
 #include <mutex>
-
-typedef pcl::PointXYZI PointType;
+#include "common/point_types.h"
+// 使用自定义类型
+typedef rv_fusion::PointRadar PointType;
+// typedef pcl::PointXYZI PointType; PointXYZI中的I只存储强度，也就是速度标量，无法利用速度分量进行EKF
 
 class RadarAggregator {
 private:
@@ -45,6 +49,7 @@ private:
 public:
     // 初始化列表：先初始化 tf_listener_，传入 buffer
     RadarAggregator() : nh_("~"), tf_listener_(tf_buffer_) {
+    // 发布到统一的 Topic
     pub_surround_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>("/radar/surround_pointcloud", 10);
 
     std::vector<std::string> radar_objects = {
@@ -67,24 +72,9 @@ public:
     }
 
     void radarCallback(const nuscenes2bag::RadarObjects::ConstPtr& msg, std::string topic_name){
-        // 1. 提取点云 (解析自定义消息)
-        pcl::PointCloud<PointType> temp_cloud;
-        temp_cloud.points.reserve(msg->objects.size());
+        if (msg->objects.empty()) return;
 
-        for (const auto& object : msg->objects){
-            PointType pt;
-            pt.x = object.pose.x;
-            pt.y = object.pose.y;
-            pt.z = object.pose.z;
-            float vx = object.vx_comp;
-            float vy = object.vy_comp;
-            pt.intensity = std::sqrt(vx*vx + vy*vy);
-            temp_cloud.push_back(pt);
-        }
-
-        if (temp_cloud.empty()) return;
-
-        // 2. 获取 TF2 变换
+        // 1. 获取 TF2 变换
         // --- 变化点 2: 使用 tf_buffer_ ---
         geometry_msgs::TransformStamped transform_stamped;
         try{
@@ -97,14 +87,42 @@ public:
             return;
         }
 
-        // 3. 转换并变换点云
-        // --- 变化点 3: 使用 tf2_eigen ---
+        // 2. 准备变换矩阵
         Eigen::Affine3d transform_eigen = tf2::transformToEigen(transform_stamped);
+        // [关键] 提取旋转矩阵，用于旋转速度向量
+        Eigen::Matrix3d rotation_matrix = transform_eigen.rotation();
         
         pcl::PointCloud<PointType> cloud_transformed;
-        pcl::transformPointCloud(temp_cloud, cloud_transformed, transform_eigen);
+        cloud_transformed.points.reserve(msg->objects.size());
 
-        // 4. 写入 Buffer (临界区)
+        for(const auto& object:msg->objects){
+            PointType pt;
+
+            // --- A. 位置变换 (旋转 + 平移) ---
+            // P_new = T * P_old
+            Eigen::Vector3d pos_sensor(object.pose.x, object.pose.y, object.pose.z);
+            Eigen::Vector3d pos_base = transform_eigen * pos_sensor; 
+            
+            pt.x = pos_base.x();
+            pt.y = pos_base.y();
+            pt.z = pos_base.z();
+
+            // --- B. 速度变换 (仅旋转，不平移) ---
+            // V_new = R * V_old
+            // 原始数据是传感器坐标系下的补偿速度
+            Eigen::Vector3d vel_sensor(object.vx_comp, object.vy_comp, 0.0);
+            Eigen::Vector3d vel_base = rotation_matrix * vel_sensor;
+
+            pt.vx_comp = vel_base.x();
+            pt.vy_comp = vel_base.y();
+            
+            // 模长 (用于可视化 intensity)
+            pt.velocity = vel_base.norm(); 
+
+            cloud_transformed.push_back(pt);
+        }
+
+        // 3. 写入 Buffer (加锁)
         {
             std::lock_guard<std::mutex> lock(mutex_);
             *accumulated_cloud_ += cloud_transformed;
@@ -123,12 +141,10 @@ public:
         // [优化] 极速交换，最小化锁时间
         {
             std::lock_guard<std::mutex> lock(mutex_);
-
             if(accumulated_cloud_->empty()) return;
 
             // Swap 指针 (O(1))
             accumulated_cloud_.swap(cloud_to_publish);
-            
             pub_stamp = latest_stamp_;
             latest_stamp_ = ros::Time(0);
 

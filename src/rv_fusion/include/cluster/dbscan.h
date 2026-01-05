@@ -7,10 +7,9 @@
 #include <pcl/point_types.h>
 #include <pcl/search/kdtree.h>
 
-// 约定：使用 PointXYZI
-// - 对于 Radar: Intensity 存储 "速度 (Velocity)"
-// - 对于 LiDAR: Intensity 存储 "反射率 (Reflectivity)"
-typedef pcl::PointXYZI PointType;
+#include "common/point_types.h"
+
+typedef rv_fusion::PointRadar PointType;
 
 class Dbscan {
 public:
