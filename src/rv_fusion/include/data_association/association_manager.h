@@ -28,8 +28,10 @@ public:
 
 private:
     // 计算两个向量的欧氏距离 (仅位置 + 速度权重)
+    // 增加 P 矩阵参数
     double calculateDistance(const Eigen::Vector4d& track_state, 
-                             const Eigen::Vector4d& det_meas);
+                         const Eigen::Vector4d& det_meas,
+                         const Eigen::MatrixXd& P_matrix);
 
     // 关联阈值 (马氏距离或欧氏距离阈值)
     double dist_threshold_; 

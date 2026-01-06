@@ -141,7 +141,14 @@ target_link_libraries(radar_aggregator_node
 ${catkin_LIBRARIES}
 ${PCL_LIBRARIES})
 
-add_executable(radar_cluster_node src/cluster/radar_cluster_node.cpp src/cluster/dbscan.cpp src/kalman_filter/ekf.cpp) 
+add_executable(radar_cluster_node 
+  src/cluster/radar_cluster_node.cpp 
+  src/cluster/dbscan.cpp
+  src/kalman_filter/ekf.cpp
+  src/object_tracker/association_manager.cpp
+  src/object_tracker/object_tracker.cpp
+  src/utils/HungarianAlg.cpp
+)
 target_link_libraries(radar_cluster_node
 ${catkin_LIBRARIES}
 ${PCL_LIBRARIES}

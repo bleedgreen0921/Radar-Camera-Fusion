@@ -41,10 +41,12 @@ public:
     Eigen::Vector4d getCartesianState() const;
 
     // Get current covariance (useful for debugging or gating)
-    Eigen::MatrixXd getCovariance() const { return P_; }
+    const Eigen::MatrixXd& getCovariance() const { return P_; }
 
     // Check if initialized
     bool isInitialized() const { return is_initialized_; }
+
+
 
 private:
     // --- Flags ---
