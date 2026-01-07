@@ -1496,6 +1496,33 @@ src/cluster/radar_cluster_node.cpp.s:
 	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/cluster/radar_cluster_node.cpp.s
 .PHONY : src/cluster/radar_cluster_node.cpp.s
 
+src/data_assocation/association_manager.o: src/data_assocation/association_manager.cpp.o
+
+.PHONY : src/data_assocation/association_manager.o
+
+# target to build an object file
+src/data_assocation/association_manager.cpp.o:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.o
+.PHONY : src/data_assocation/association_manager.cpp.o
+
+src/data_assocation/association_manager.i: src/data_assocation/association_manager.cpp.i
+
+.PHONY : src/data_assocation/association_manager.i
+
+# target to preprocess a source file
+src/data_assocation/association_manager.cpp.i:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.i
+.PHONY : src/data_assocation/association_manager.cpp.i
+
+src/data_assocation/association_manager.s: src/data_assocation/association_manager.cpp.s
+
+.PHONY : src/data_assocation/association_manager.s
+
+# target to generate assembly for a file
+src/data_assocation/association_manager.cpp.s:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.s
+.PHONY : src/data_assocation/association_manager.cpp.s
+
 src/kalman_filter/ekf.o: src/kalman_filter/ekf.cpp.o
 
 .PHONY : src/kalman_filter/ekf.o
@@ -1523,6 +1550,33 @@ src/kalman_filter/ekf.cpp.s:
 	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/kalman_filter/ekf.cpp.s
 .PHONY : src/kalman_filter/ekf.cpp.s
 
+src/object_tracker/object_tracker.o: src/object_tracker/object_tracker.cpp.o
+
+.PHONY : src/object_tracker/object_tracker.o
+
+# target to build an object file
+src/object_tracker/object_tracker.cpp.o:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.o
+.PHONY : src/object_tracker/object_tracker.cpp.o
+
+src/object_tracker/object_tracker.i: src/object_tracker/object_tracker.cpp.i
+
+.PHONY : src/object_tracker/object_tracker.i
+
+# target to preprocess a source file
+src/object_tracker/object_tracker.cpp.i:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.i
+.PHONY : src/object_tracker/object_tracker.cpp.i
+
+src/object_tracker/object_tracker.s: src/object_tracker/object_tracker.cpp.s
+
+.PHONY : src/object_tracker/object_tracker.s
+
+# target to generate assembly for a file
+src/object_tracker/object_tracker.cpp.s:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.s
+.PHONY : src/object_tracker/object_tracker.cpp.s
+
 src/radar_aggregator/radar_aggregator_node.o: src/radar_aggregator/radar_aggregator_node.cpp.o
 
 .PHONY : src/radar_aggregator/radar_aggregator_node.o
@@ -1549,6 +1603,33 @@ src/radar_aggregator/radar_aggregator_node.s: src/radar_aggregator/radar_aggrega
 src/radar_aggregator/radar_aggregator_node.cpp.s:
 	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_aggregator_node.dir/build.make rv_fusion/CMakeFiles/radar_aggregator_node.dir/src/radar_aggregator/radar_aggregator_node.cpp.s
 .PHONY : src/radar_aggregator/radar_aggregator_node.cpp.s
+
+src/utils/hungarian.o: src/utils/hungarian.cpp.o
+
+.PHONY : src/utils/hungarian.o
+
+# target to build an object file
+src/utils/hungarian.cpp.o:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.o
+.PHONY : src/utils/hungarian.cpp.o
+
+src/utils/hungarian.i: src/utils/hungarian.cpp.i
+
+.PHONY : src/utils/hungarian.i
+
+# target to preprocess a source file
+src/utils/hungarian.cpp.i:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.i
+.PHONY : src/utils/hungarian.cpp.i
+
+src/utils/hungarian.s: src/utils/hungarian.cpp.s
+
+.PHONY : src/utils/hungarian.s
+
+# target to generate assembly for a file
+src/utils/hungarian.cpp.s:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.s
+.PHONY : src/utils/hungarian.cpp.s
 
 # Help Target
 help:
@@ -1654,12 +1735,21 @@ help:
 	@echo "... src/cluster/radar_cluster_node.o"
 	@echo "... src/cluster/radar_cluster_node.i"
 	@echo "... src/cluster/radar_cluster_node.s"
+	@echo "... src/data_assocation/association_manager.o"
+	@echo "... src/data_assocation/association_manager.i"
+	@echo "... src/data_assocation/association_manager.s"
 	@echo "... src/kalman_filter/ekf.o"
 	@echo "... src/kalman_filter/ekf.i"
 	@echo "... src/kalman_filter/ekf.s"
+	@echo "... src/object_tracker/object_tracker.o"
+	@echo "... src/object_tracker/object_tracker.i"
+	@echo "... src/object_tracker/object_tracker.s"
 	@echo "... src/radar_aggregator/radar_aggregator_node.o"
 	@echo "... src/radar_aggregator/radar_aggregator_node.i"
 	@echo "... src/radar_aggregator/radar_aggregator_node.s"
+	@echo "... src/utils/hungarian.o"
+	@echo "... src/utils/hungarian.i"
+	@echo "... src/utils/hungarian.s"
 .PHONY : help
 
 

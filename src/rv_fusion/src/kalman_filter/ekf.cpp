@@ -17,10 +17,10 @@ ExtendedKalmanFilter::ExtendedKalmanFilter() : is_initialized_(false) {
     // Radar is accurate in radial distance but noisy in lateral position.
     // Velocity measurement is generally okay but has noise.
     R_.setIdentity();
-    R_(0, 0) = 0.5 * 0.5; // var_px
+    R_(0, 0) = 1.0 * 1.0; // var_px
     R_(1, 1) = 0.5 * 0.5; // var_py
-    R_(2, 2) = 1.5 * 1.5; // var_vx
-    R_(3, 3) = 1.5 * 1.5; // var_vy
+    R_(2, 2) = 2.0 * 2.0; // var_vx
+    R_(3, 3) = 2.0 * 2.0; // var_vy
 }
 
 ExtendedKalmanFilter::~ExtendedKalmanFilter() {}
@@ -53,11 +53,11 @@ void ExtendedKalmanFilter::init(const Eigen::Vector4d& meas) {
     // Initialize Covariance P
     // High uncertainty for unobserved states (yaw_rate)
     P_.setIdentity();
-    P_(0,0) = 1.0; 
-    P_(1,1) = 1.0;
-    P_(2,2) = 5.0;
-    P_(3,3) = 1.0;  
-    P_(4,4) = 100.0; // Very uncertain about turn rate initially
+    P_(0,0) = 1.0 * 1.0; 
+    P_(1,1) = 0.5 * 0.5;
+    P_(2,2) = 2.0 * 2.0;
+    P_(3,3) = 2.0 * 2.0;  
+    P_(4,4) = 100; 
 
     is_initialized_ = true;
 }
