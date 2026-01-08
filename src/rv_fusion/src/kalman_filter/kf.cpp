@@ -14,10 +14,10 @@ Kalman_Filter::Kalman_Filter(){
 
     // 3. 设置测量噪声 R (雷达参数)
     // 假设：雷达位置误差约 0.5m，速度误差约 1.0m/s
-    R_(0, 0) = 0.5 * 0.5; // var_px
+    R_(0, 0) = 1.0 * 1.0; // var_px
     R_(1, 1) = 0.5 * 0.5; // var_py
-    R_(2, 2) = 1.0 * 1.0; // var_vx
-    R_(3, 3) = 1.0 * 1.0; // var_vy
+    R_(2, 2) = 2.0 * 2.0; // var_vx
+    R_(3, 3) = 2.0 * 2.0; // var_vy
 }
 
 Kalman_Filter::~Kalman_Filter(){}
@@ -25,10 +25,10 @@ Kalman_Filter::~Kalman_Filter(){}
 void Kalman_Filter::init(const Eigen::Vector4d& x_in){
     x_ = x_in;
     P_.setIdentity();
-    P_(0, 0) = 1.0; 
-    P_(1, 1) = 1.0;
-    P_(2, 2) = 10.0; // 初始速度可能不太准，方差给大点
-    P_(3, 3) = 10.0;
+    P_(0, 0) = 1.0 * 1.0; 
+    P_(1, 1) = 0.5 * 0.5; 
+    P_(2, 2) = 2.0 * 2.0; 
+    P_(3, 3) = 2.0 * 2.0;
 }
 
 void Kalman_Filter::predict(double dt){

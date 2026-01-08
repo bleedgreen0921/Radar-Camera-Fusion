@@ -176,7 +176,7 @@ void ObjectTracker::printPerformanceMetrics() {
         coasting_ratio = 100.0 * (double)stats_.coasted_frames_accum / stats_.total_frames_accum;
     }
 
-    // 打印漂亮的表格
+    // 打印表格
     printf("\n=== [Radar Tracker Performance Report] ===\n");
     printf("| Metric                 | Value   | Target  | Diagnosis                     |\n");
     printf("|------------------------|---------|---------|-------------------------------|\n");
