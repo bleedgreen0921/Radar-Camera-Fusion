@@ -16,7 +16,7 @@ AssociationManager::AssociationManager() {
     // 4个自由度 (x, y, vx, vy) 下，99% 的置信区间阈值大约是 13.27
     // 95% 的置信区间是 9.48。
     // 意味着：如果一个检测点落在预测椭圆的 9X% 概率范围之外，我们认为它不是同一个物体。
-    dist_threshold_ = 12.0;
+    dist_threshold_ = 30.0;
 }
 
 AssociationManager::~AssociationManager() {}
@@ -96,6 +96,9 @@ void AssociationManager::associate(
     // HungarianAlg 需要扁平化的 vector (Row-Major)
     distMatrix_t cost_matrix(n_tracks * n_dets);
 
+    // [新增] 调试计数器
+    int debug_print_count = 0;
+
     for (size_t i = 0; i < n_tracks; ++i) {
         // 基于 EKF 预测状态准备关联量（预测一致性）
         Eigen::Vector4d track_pred = tracks[i].ekf.getCartesianState();
@@ -108,6 +111,16 @@ void AssociationManager::associate(
             // 填入扁平化数组: index = row * ncols + col
             // 构建全局代价矩阵（问题建模）
             cost_matrix[i * n_dets + j] = dist;
+
+            // [新增] 只有当前几帧或特定ID时打印，防止刷屏
+            // 打印 Track 0 和 Detection 0 之间的距离，看看离谱不离谱
+            if (i == 0 && j == 0 && debug_print_count < 10) {
+                std::cout << "[DEBUG] Track-Det Dist: " << dist 
+                          << " | Pred: " << track_pred(0) << "," << track_pred(1) 
+                          << " | Meas: " << detections[j](0) << "," << detections[j](1) 
+                          << " | P(0,0): " << P(0,0) << std::endl;
+                debug_print_count++;
+            }
         }
     }
 

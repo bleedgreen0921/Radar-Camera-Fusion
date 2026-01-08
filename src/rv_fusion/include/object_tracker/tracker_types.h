@@ -44,7 +44,7 @@ struct Track {
     // 新增] 历史轨迹缓存 (只存位置，用于 Rviz 显示尾迹)
     // 使用 deque 方便从头部删除旧数据
     std::deque<Eigen::Vector2d> history; 
-    const size_t max_history_size = 20; // 限制缓存长度
+    static constexpr size_t max_history_size = 20;
 
     // 构造函数
     Track(int _id, double _timestamp) 

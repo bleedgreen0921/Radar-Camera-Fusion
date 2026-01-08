@@ -96,11 +96,53 @@ rv_fusion/CMakeFiles/radar_cluster_node.dir/src/kalman_filter/ekf.cpp.s: cmake_f
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/radar_cluster_node.dir/src/kalman_filter/ekf.cpp.s"
 	cd /home/qjj/桌面/RV_Fusion_ws/build/rv_fusion && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/kalman_filter/ekf.cpp -o CMakeFiles/radar_cluster_node.dir/src/kalman_filter/ekf.cpp.s
 
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.o: rv_fusion/CMakeFiles/radar_cluster_node.dir/flags.make
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.o: /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/data_assocation/association_manager.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/qjj/桌面/RV_Fusion_ws/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object rv_fusion/CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.o"
+	cd /home/qjj/桌面/RV_Fusion_ws/build/rv_fusion && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.o -c /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/data_assocation/association_manager.cpp
+
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.i"
+	cd /home/qjj/桌面/RV_Fusion_ws/build/rv_fusion && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/data_assocation/association_manager.cpp > CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.i
+
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.s"
+	cd /home/qjj/桌面/RV_Fusion_ws/build/rv_fusion && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/data_assocation/association_manager.cpp -o CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.s
+
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.o: rv_fusion/CMakeFiles/radar_cluster_node.dir/flags.make
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.o: /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/object_tracker/object_tracker.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/qjj/桌面/RV_Fusion_ws/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object rv_fusion/CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.o"
+	cd /home/qjj/桌面/RV_Fusion_ws/build/rv_fusion && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.o -c /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/object_tracker/object_tracker.cpp
+
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.i"
+	cd /home/qjj/桌面/RV_Fusion_ws/build/rv_fusion && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/object_tracker/object_tracker.cpp > CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.i
+
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.s"
+	cd /home/qjj/桌面/RV_Fusion_ws/build/rv_fusion && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/object_tracker/object_tracker.cpp -o CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.s
+
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.o: rv_fusion/CMakeFiles/radar_cluster_node.dir/flags.make
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.o: /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/utils/hungarian.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/qjj/桌面/RV_Fusion_ws/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object rv_fusion/CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.o"
+	cd /home/qjj/桌面/RV_Fusion_ws/build/rv_fusion && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.o -c /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/utils/hungarian.cpp
+
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.i"
+	cd /home/qjj/桌面/RV_Fusion_ws/build/rv_fusion && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/utils/hungarian.cpp > CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.i
+
+rv_fusion/CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.s"
+	cd /home/qjj/桌面/RV_Fusion_ws/build/rv_fusion && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/src/utils/hungarian.cpp -o CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.s
+
 # Object files for target radar_cluster_node
 radar_cluster_node_OBJECTS = \
 "CMakeFiles/radar_cluster_node.dir/src/cluster/radar_cluster_node.cpp.o" \
 "CMakeFiles/radar_cluster_node.dir/src/cluster/dbscan.cpp.o" \
-"CMakeFiles/radar_cluster_node.dir/src/kalman_filter/ekf.cpp.o"
+"CMakeFiles/radar_cluster_node.dir/src/kalman_filter/ekf.cpp.o" \
+"CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.o" \
+"CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.o" \
+"CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.o"
 
 # External object files for target radar_cluster_node
 radar_cluster_node_EXTERNAL_OBJECTS =
@@ -108,6 +150,9 @@ radar_cluster_node_EXTERNAL_OBJECTS =
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: rv_fusion/CMakeFiles/radar_cluster_node.dir/src/cluster/radar_cluster_node.cpp.o
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: rv_fusion/CMakeFiles/radar_cluster_node.dir/src/cluster/dbscan.cpp.o
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: rv_fusion/CMakeFiles/radar_cluster_node.dir/src/kalman_filter/ekf.cpp.o
+/home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: rv_fusion/CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.o
+/home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: rv_fusion/CMakeFiles/radar_cluster_node.dir/src/object_tracker/object_tracker.cpp.o
+/home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: rv_fusion/CMakeFiles/radar_cluster_node.dir/src/utils/hungarian.cpp.o
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: /usr/lib/x86_64-linux-gnu/libopencv_core.so.4.2.0
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: /opt/ros/noetic/lib/libeigen_conversions.so
@@ -419,7 +464,7 @@ radar_cluster_node_EXTERNAL_OBJECTS =
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: /usr/lib/x86_64-linux-gnu/libXext.so
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: /usr/lib/x86_64-linux-gnu/libXt.so
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node: rv_fusion/CMakeFiles/radar_cluster_node.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/qjj/桌面/RV_Fusion_ws/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable /home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/qjj/桌面/RV_Fusion_ws/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable /home/qjj/桌面/RV_Fusion_ws/devel/lib/rv_fusion/radar_cluster_node"
 	cd /home/qjj/桌面/RV_Fusion_ws/build/rv_fusion && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/radar_cluster_node.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
