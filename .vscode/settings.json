@@ -9,5 +9,6 @@
         "/home/qjj/桌面/nus2bag_ws/devel/lib/python3/dist-packages",
         "/opt/ros/noetic/lib/python3/dist-packages"
     ],
-    "ROS2.distro": "noetic"
+    "ROS2.distro": "noetic",
+    "cmake.ignoreCMakeListsMissing": true
 }
