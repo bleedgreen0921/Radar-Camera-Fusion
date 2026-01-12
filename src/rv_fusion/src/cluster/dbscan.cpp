@@ -109,7 +109,8 @@ void Dbscan::extract(std::vector<ClusterInfo>& clusters) {
         }
 
         // [新增] 计算簇的统计信息
-        calculateClusterInfo(cluster);
+        // calculateClusterInfo(cluster);
+        cluster.point_count = cluster.indices.indices.size();
         clusters.push_back(cluster);
         statistics_.cluster_count++;
     }
@@ -133,22 +134,31 @@ void Dbscan::getNeighbors(int index, std::vector<int>& neighbors) {
     neighbors.clear();
     neighbors.reserve(k_indices.size());
 
+    // 预计算阈值平方（避免除零）
+    float eps_dist_sqr = config_.eps_dist * config_.eps_dist;
+    float eps_vel_sqr = config_.eps_vel * config_.eps_vel;
+
     for (size_t i = 0; i < k_indices.size(); ++i) {
         int idx = k_indices[i];
         float dist_sqr = k_sqr_distances[i];
 
         if(config_.use_vel) {
             const auto& target_point = search_cloud_->points[idx];
-            float vel_diff = std::abs(target_point.velocity - search_point.velocity);
             
-            // [改进] 更稳健的距离计算，避免除零
-            float eps_dist_sqr = config_.eps_dist * config_.eps_dist;
-            float eps_vel_sqr = config_.eps_vel * config_.eps_vel;
+            // [改进] 使用速度向量替代标量速度
+            Eigen::Vector2f search_vel(search_point.vx_comp, search_point.vy_comp);
+            Eigen::Vector2f target_vel(target_point.vx_comp, target_point.vy_comp);
+            float vel_diff_sqr = (search_vel - target_vel).squaredNorm();
             
-            float normalized_dist = (dist_sqr / eps_dist_sqr) + 
-                                   (vel_diff * vel_diff) / eps_vel_sqr;
+            // [改进] 可配置权重的归一化距离
+            float spatial_component = (dist_sqr / eps_dist_sqr) * config_.spatial_weight;
+            float velocity_component = (vel_diff_sqr / eps_vel_sqr) * config_.velocity_weight;
+            float normalized_dist = spatial_component + velocity_component;
 
-            if (normalized_dist <= 1.0f) {
+            // 动态阈值：权重和归一化
+            float dynamic_threshold = config_.spatial_weight + config_.velocity_weight;
+
+            if (normalized_dist <= dynamic_threshold) {
                 neighbors.push_back(idx);
             }
         } else {
@@ -158,22 +168,22 @@ void Dbscan::getNeighbors(int index, std::vector<int>& neighbors) {
 }
 
 // [新增] 计算簇的详细信息
-void Dbscan::calculateClusterInfo(ClusterInfo& info) {
-    info.point_count = info.indices.indices.size();
-    Eigen::Vector4f centroid = Eigen::Vector4f::Zero();
-    Eigen::Vector3f avg_velocity = Eigen::Vector3f::Zero();
+// void Dbscan::calculateClusterInfo(ClusterInfo& info) {
+//     info.point_count = info.indices.indices.size();
+//     Eigen::Vector4f centroid = Eigen::Vector4f::Zero();
+//     Eigen::Vector3f avg_velocity = Eigen::Vector3f::Zero();
 
-    for (int idx : info.indices.indices) {
-        const auto& pt = search_cloud_->points[idx];
-        centroid += Eigen::Vector4f(pt.x, pt.y, pt.z, 1.0f);
-        avg_velocity += Eigen::Vector3f(pt.vx_comp, pt.vy_comp, 0.0f);
-    }
+//     for (int idx : info.indices.indices) {
+//         const auto& pt = search_cloud_->points[idx];
+//         centroid += Eigen::Vector4f(pt.x, pt.y, pt.z, 1.0f);
+//         avg_velocity += Eigen::Vector3f(pt.vx_comp, pt.vy_comp, 0.0f);
+//     }
 
-    if (info.point_count > 0) {
-        centroid /= static_cast<float>(info.point_count);
-        avg_velocity /= static_cast<float>(info.point_count);
-    }
+//     if (info.point_count > 0) {
+//         centroid /= static_cast<float>(info.point_count);
+//         avg_velocity /= static_cast<float>(info.point_count);
+//     }
 
-    info.centroid = centroid;
-    info.velocity = avg_velocity;
-}
+//     info.centroid = centroid;
+//     info.velocity = avg_velocity;
+// }

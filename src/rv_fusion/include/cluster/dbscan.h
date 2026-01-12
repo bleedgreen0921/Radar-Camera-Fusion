@@ -21,12 +21,14 @@ public:
         bool use_vel = true;        // 使用速度约束
         bool use_confidence = false;// [新增] 使用置信度约束
         float confidence_thresh = 0.5f; // [新增] 置信度阈值
+        float spatial_weight = 1.0f;    // 空间距离权重
+        float velocity_weight = 1.0f;   // 速度距离权重
     };
     
     struct ClusterInfo {
         pcl::PointIndices indices;
-        Eigen::Vector4f centroid;   // [新增] 簇中心
-        Eigen::Vector3f velocity;   // [新增] 平均速度
+        // Eigen::Vector4f centroid;   // [新增] 簇中心
+        // Eigen::Vector3f velocity;   // [新增] 平均速度
         size_t point_count;         // [新增] 点数
     };
 
