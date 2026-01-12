@@ -13,49 +13,51 @@ typedef rv_fusion::PointRadar PointType;
 
 class Dbscan {
 public:
-    /**
-     * @brief 构造函数
-     * @param eps_dist 空间搜索半径 (米)
-     * @param eps_vel  速度搜索半径 (米/秒)
-     * @param min_pts  成为核心点所需的最小邻居数
-     * @param use_z    是否使用 Z 轴信息 (Radar选 false, LiDAR选 true)
-     * @param use_vel  是否使用速度约束 (Radar选 true, LiDAR通常选 false)
-     */
-    Dbscan(double eps_dist, double eps_vel, int min_pts, bool use_z, bool use_vel);
+    struct Config {
+        double eps_dist = 1.0;      // 空间搜索半径
+        double eps_vel = 2.0;       // 速度搜索半径
+        int min_pts = 3;           // 最小邻居数
+        bool use_z = false;         // 使用Z轴信息
+        bool use_vel = true;        // 使用速度约束
+        bool use_confidence = false;// [新增] 使用置信度约束
+        float confidence_thresh = 0.5f; // [新增] 置信度阈值
+    };
+    
+    struct ClusterInfo {
+        pcl::PointIndices indices;
+        Eigen::Vector4f centroid;   // [新增] 簇中心
+        Eigen::Vector3f velocity;   // [新增] 平均速度
+        size_t point_count;         // [新增] 点数
+    };
 
+    explicit Dbscan(const Config& config);
     ~Dbscan();
 
-    /**
-     * @brief 设置输入点云并构建 KD-Tree
-     * 内部会自动根据 use_z 配置决定是否对点云进行 2D 拍扁处理
-     */
-    void setInputCloud(pcl::PointCloud<PointType>::Ptr cloud);
-
-    /**
-     * @brief 执行聚类的主函数
-     * @param cluster_indices 返回聚类结果（每个簇包含的点索引列表）
-     */
-    void extract(std::vector<pcl::PointIndices>& cluster_indices);
+    void setInputCloud(pcl::PointCloud<rv_fusion::PointRadar>::Ptr cloud);
+    
+    // [改进] 返回更丰富的聚类信息
+    void extract(std::vector<ClusterInfo>& clusters);
+    
+    // [新增] 获取统计信息
+    struct Statistics {
+        size_t total_points;
+        size_t clustered_points;
+        size_t noise_points;
+        size_t cluster_count;
+        double processing_time_ms;
+    };
+    Statistics getStatistics() const { return statistics_; }
 
 private:
-    /**
-     * @brief 核心：寻找邻居 (融合了空间和速度)
-     * @param index 当前点的索引
-     * @param neighbors 返回找到的邻居索引列表
-     * 根据 use_vel 决定是否启用径向速度参数
-     */
     void getNeighbors(int index, std::vector<int>& neighbors);
-
-    // 成员变量
-    pcl::search::KdTree<PointType>::Ptr tree_; // 用于加速空间搜索
-    pcl::PointCloud<PointType>::Ptr input_cloud_; // 数据指针，原始数据引用
-    pcl::PointCloud<PointType>::Ptr search_cloud_; // 内部搜索用数据 (可能已拍扁)
+    void calculateClusterInfo(ClusterInfo& info); // [新增] 计算簇信息
     
-    double eps_dist_; // 空间阈值
-    double eps_vel_;  // 速度阈值
-    int min_pts_;     // 密度阈值
-    bool use_z_;   // Z轴开关
-    bool use_vel_; // 速度开关
+    pcl::search::KdTree<rv_fusion::PointRadar>::Ptr tree_;
+    pcl::PointCloud<rv_fusion::PointRadar>::Ptr input_cloud_;
+    pcl::PointCloud<rv_fusion::PointRadar>::Ptr search_cloud_;
+    
+    Config config_;
+    Statistics statistics_; // [新增] 统计信息
 };
 
-#endif // RADAR_CONVERTER_DBSCAN_H
+#endif

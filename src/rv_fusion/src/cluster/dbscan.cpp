@@ -10,17 +10,16 @@
 #include <pcl/search/impl/kdtree.hpp>
 
 // 构造函数：初始化参数和 KD-Tree 指针
-Dbscan::Dbscan(double eps_dist, double eps_vel, int min_pts, bool use_z, bool use_vel)
-    : eps_dist_(eps_dist), eps_vel_(eps_vel), min_pts_(min_pts), use_z_(use_z), use_vel_(use_vel) {
-    
-    tree_.reset(new pcl::search::KdTree<PointType>());
-    search_cloud_.reset(new pcl::PointCloud<PointType>());
+Dbscan::Dbscan(const Config& config) : config_(config) {
+    tree_.reset(new pcl::search::KdTree<rv_fusion::PointRadar>());
+    search_cloud_.reset(new pcl::PointCloud<rv_fusion::PointRadar>());
+    statistics_ = {0, 0, 0, 0, 0.0};
 }
 
 Dbscan::~Dbscan() {}
 
 // 1. 数据预处理 (根据配置决定是否拍扁 Z 轴)
-void Dbscan::setInputCloud(pcl::PointCloud<PointType>::Ptr cloud) {
+void Dbscan::setInputCloud(pcl::PointCloud<rv_fusion::PointRadar>::Ptr cloud) {
     input_cloud_ = cloud;
     if (input_cloud_->empty()) return;
 
@@ -28,87 +27,99 @@ void Dbscan::setInputCloud(pcl::PointCloud<PointType>::Ptr cloud) {
     search_cloud_->clear();
     search_cloud_->points.reserve(input_cloud_->points.size());
 
-    for(const auto& pt : input_cloud_->points){
-        PointType pt_internal = pt;
-        // 这里的 pt 包含 vx_comp, vy_comp，直接赋值会被完整拷贝 (因为 PointType 现在是 PointRadar)
-
-        if(!use_z_){
-            pt_internal.z = 0.0f;
+    for(const auto& pt : *input_cloud_) {
+        auto pt_processed = pt;
+        if(!config_.use_z) {
+            pt_processed.z = 0.0f;
         }
-        // 如果 use_z_ 为 true (LiDAR模式)，保留原始 Z，KD-Tree 将进行 3D 搜索
-        search_cloud_->push_back(pt_internal);
+        // [新增] 置信度过滤
+        if(config_.use_confidence && pt.confidence < config_.confidence_thresh) {
+            continue;
+        }
+        search_cloud_->push_back(pt_processed);
     }
     // 基于处理后的点云重建 KD-Tree
     tree_->setInputCloud(search_cloud_);
 }
 
 // 2. 核心聚类逻辑 (DBSCAN 主流程)
-void Dbscan::extract(std::vector<pcl::PointIndices>& cluster_indices) {
-    cluster_indices.clear();
-    if (!input_cloud_ || input_cloud_->empty()) return;
-
-    int n_points = input_cloud_->points.size();
+void Dbscan::extract(std::vector<ClusterInfo>& clusters) {
+    auto start_time = std::chrono::high_resolution_clock::now();
     
-    // labels 用于标记每个点的状态：
-    // 0: 未处理 (Unvisited)
-    // -1: 噪声 (Noise)
-    // >0: 簇 ID (Cluster ID)
-    std::vector<int> labels(n_points, 0); 
+    clusters.clear();
+    if (!search_cloud_ || search_cloud_->empty()) return;
+
+    const size_t n_points = search_cloud_->size();
+    std::vector<int> labels(n_points, 0);
     int cluster_id = 0;
 
-    // --- 外层循环：遍历每一个点 ---
-    for (int i = 0; i < n_points; ++i) {
-        if (labels[i] != 0) continue; // 如果已经归类或者是已知的噪声，跳过
+    // [改进] 使用BFS队列替代动态vector，提高性能
+    for (size_t i = 0; i < n_points; ++i) {
+        if (labels[i] != 0) continue;
 
-        // 寻找当前点的所有“合格”邻居
         std::vector<int> neighbors;
-        getNeighbors(i, neighbors); 
+        getNeighbors(static_cast<int>(i), neighbors);
 
-        // 密度判断：如果邻居太少，标记为噪声
-        if (neighbors.size() < min_pts_) {
-            labels[i] = -1; 
+        if (neighbors.size() < config_.min_pts) {
+            labels[i] = -1;
+            statistics_.noise_points++;
             continue;
         }
 
-        // --- 发现核心点，开始建立新簇 ---
         cluster_id++;
         labels[i] = cluster_id;
 
-        pcl::PointIndices current_cluster;
-        current_cluster.indices.push_back(i);
+        ClusterInfo cluster;
+        cluster.indices.indices.push_back(static_cast<int>(i));
 
-        // --- 内层循环：区域生长 (BFS) ---
-        // 注意：neighbors 列表会在循环中动态增长
-        for (size_t k = 0; k < neighbors.size(); ++k) {
-            int neighbor_idx = neighbors[k];
+        // [改进] 使用队列进行BFS，避免动态插入的性能问题
+        std::queue<int> expand_queue;
+        std::unordered_set<int> visited;
+        
+        for (int neighbor : neighbors) {
+            expand_queue.push(neighbor);
+            visited.insert(neighbor);
+        }
 
-            // 情况 A: 之前被标记为噪声的点
-            // (说明它虽不是核心点，但在当前核心点的邻域内 -> 它是边缘点)
-            if (labels[neighbor_idx] == -1) {
-                labels[neighbor_idx] = cluster_id; // 归入当前簇
-                current_cluster.indices.push_back(neighbor_idx);
+        while (!expand_queue.empty()) {
+            int current_idx = expand_queue.front();
+            expand_queue.pop();
+
+            if (labels[current_idx] == -1) {
+                labels[current_idx] = cluster_id;
+                cluster.indices.indices.push_back(current_idx);
             }
 
-            // 情况 B: 已经处理过的点，跳过
-            if (labels[neighbor_idx] != 0) continue;
+            if (labels[current_idx] != 0) continue;
 
-            // 情况 C: 全新的点
-            labels[neighbor_idx] = cluster_id; // 归入当前簇
-            current_cluster.indices.push_back(neighbor_idx);
+            labels[current_idx] = cluster_id;
+            cluster.indices.indices.push_back(current_idx);
 
-            // 检查这个新点是否也是核心点？
-            std::vector<int> sub_neighbors;
-            getNeighbors(neighbor_idx, sub_neighbors); // 递归式搜索
+            std::vector<int> current_neighbors;
+            getNeighbors(current_idx, current_neighbors);
 
-            // 如果它也是核心点，把它发现的邻居加入大部队，继续向外扩
-            if (sub_neighbors.size() >= min_pts_) {
-                neighbors.insert(neighbors.end(), sub_neighbors.begin(), sub_neighbors.end());
+            if (current_neighbors.size() >= config_.min_pts) {
+                for (int neighbor : current_neighbors) {
+                    if (visited.find(neighbor) == visited.end()) {
+                        expand_queue.push(neighbor);
+                        visited.insert(neighbor);
+                    }
+                }
             }
         }
-        
-        // 一个簇生长完毕，保存结果
-        cluster_indices.push_back(current_cluster);
+
+        // [新增] 计算簇的统计信息
+        calculateClusterInfo(cluster);
+        clusters.push_back(cluster);
+        statistics_.cluster_count++;
     }
+
+    statistics_.total_points = n_points;
+    statistics_.clustered_points = n_points - statistics_.noise_points;
+    
+    auto end_time = std::chrono::high_resolution_clock::now();
+    statistics_.processing_time_ms = 
+        std::chrono::duration<double, std::milli>(end_time - start_time).count();
 }
 
 // 3. 带速度维度的邻域搜索
@@ -116,38 +127,53 @@ void Dbscan::getNeighbors(int index, std::vector<int>& neighbors) {
     std::vector<int> k_indices;
     std::vector<float> k_sqr_distances;
     
-    PointType searchPoint = search_cloud_->points[index];
-
-    // [第一步] 空间粗筛：利用 KD-Tree 快速找出空间距离 < eps_dist 的点
-    // 如果 use_z_=false，这里算的就是 2D 欧氏距离
-    // 如果 use_z_=true， 这里算的就是 3D 欧氏距离
-    tree_->radiusSearch(searchPoint, eps_dist_, k_indices, k_sqr_distances);
+    const auto& search_point = search_cloud_->points[index];
+    tree_->radiusSearch(search_point, config_.eps_dist, k_indices, k_sqr_distances);
 
     neighbors.clear();
     neighbors.reserve(k_indices.size());
 
-    // [第二步] 速度/反射率精筛：遍历空间邻居，计算加权距离
     for (size_t i = 0; i < k_indices.size(); ++i) {
         int idx = k_indices[i];
-        
-        // 计算空间距离平方 (已经由 KD-Tree 算出)
-        float dist_sqr = k_sqr_distances[i]; 
+        float dist_sqr = k_sqr_distances[i];
 
-        if(use_vel_){
-            // 假设 intensity 存储速度，进行加权距离计算
-            float vel_diff = std::abs(search_cloud_->points[idx].velocity - searchPoint.velocity);
-
-            // 归一化椭球距离公式
-            float normalized_dist = (dist_sqr / (eps_dist_ * eps_dist_)) + 
-                                    (vel_diff * vel_diff) / (eps_vel_ * eps_vel_);
+        if(config_.use_vel) {
+            const auto& target_point = search_cloud_->points[idx];
+            float vel_diff = std::abs(target_point.velocity - search_point.velocity);
+            
+            // [改进] 更稳健的距离计算，避免除零
+            float eps_dist_sqr = config_.eps_dist * config_.eps_dist;
+            float eps_vel_sqr = config_.eps_vel * config_.eps_vel;
+            
+            float normalized_dist = (dist_sqr / eps_dist_sqr) + 
+                                   (vel_diff * vel_diff) / eps_vel_sqr;
 
             if (normalized_dist <= 1.0f) {
                 neighbors.push_back(idx);
             }
-        }
-        else{
-            // --- LiDAR 模式 (纯空间聚类) ---
+        } else {
             neighbors.push_back(idx);
         }
     }
+}
+
+// [新增] 计算簇的详细信息
+void Dbscan::calculateClusterInfo(ClusterInfo& info) {
+    info.point_count = info.indices.indices.size();
+    Eigen::Vector4f centroid = Eigen::Vector4f::Zero();
+    Eigen::Vector3f avg_velocity = Eigen::Vector3f::Zero();
+
+    for (int idx : info.indices.indices) {
+        const auto& pt = search_cloud_->points[idx];
+        centroid += Eigen::Vector4f(pt.x, pt.y, pt.z, 1.0f);
+        avg_velocity += Eigen::Vector3f(pt.vx_comp, pt.vy_comp, 0.0f);
+    }
+
+    if (info.point_count > 0) {
+        centroid /= static_cast<float>(info.point_count);
+        avg_velocity /= static_cast<float>(info.point_count);
+    }
+
+    info.centroid = centroid;
+    info.velocity = avg_velocity;
 }

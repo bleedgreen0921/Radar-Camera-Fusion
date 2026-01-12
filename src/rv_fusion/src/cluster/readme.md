@@ -1,214 +1,304 @@
 # DBSCAN聚类代码详解
 
 ```cpp
-Dbscan::Dbscan(double eps_dist, double eps_vel, int min_pts, bool use_z, bool use_vel)
-    : eps_dist_(eps_dist), eps_vel_(eps_vel), min_pts_(min_pts), use_z_(use_z), use_vel_(use_vel) {
-    
-    tree_.reset(new pcl::search::KdTree<PointType>());
-    search_cloud_.reset(new pcl::PointCloud<PointType>());
+Dbscan::Dbscan(const Config& config) : config_(config) {
+    tree_.reset(new pcl::search::KdTree<rv_fusion::PointRadar>());
+    search_cloud_.reset(new pcl::PointCloud<rv_fusion::PointRadar>());
+    statistics_ = {0, 0, 0, 0, 0.0};
 }
+
+struct Config {
+        double eps_dist = 1.0;      // 空间搜索半径
+        double eps_vel = 2.0;       // 速度搜索半径
+        int min_pts = 3;           // 最小邻居数
+        bool use_z = false;         // 使用Z轴信息
+        bool use_vel = true;        // 使用速度约束
+        bool use_confidence = false;// [新增] 使用置信度约束
+        float confidence_thresh = 0.5f; // [新增] 置信度阈值
+    };
+
+struct Statistics {
+    size_t total_points;       // 总点数
+    size_t clustered_points;   // 成功聚类点数
+    size_t noise_points;       // 噪声点数
+    size_t cluster_count;      // 检测到的簇数量
+    double processing_time_ms; // 处理时间（毫秒）
+};
 ```
 
-| 参数          | 类型           | 默认值 | 作用                       |
-| :------------ | :------------- | :----- | -------------------------- |
-| eps_dist      | double         | 必需   | 空间邻域半径（米）         |
-| eps_vel       | double         | 必需   | 速度相似性阈值（m/s）      |
-| min_pts       | int            | 必需   | 形成簇的最小点数           |
-| use_z         | bool           | false  | 是否使用Z轴（3D/2D模式）   |
-| use_vel       | bool           | false  | 是否使用速度维度           |
-| tree_         | KdTree指针     |        | 空间索引结构，加速邻域搜索 |
-| search_cloud_ | PointCloud指针 |        | 预处理后的点云（用于搜索） |
-
-- **双重阈值**：同时支持空间距离和速度相似性
-- **灵活模式**：通过`use_z`和`use_vel`切换2D/3D、雷达/激光雷达模式
-- **智能指针**：使用`reset()`管理动态内存
+- config_(config)：通过初始化列表直接拷贝配置参数，效率高；
+- 智能指针使用reset()进行初始化，确保资源安全管理；
+- 使用`std::shared_ptr`自动管理内存，避免内存泄漏；
+- reset()方法确保在重新赋值前正确释放原有资源；
 
 ------
 
 ## 数据预处理
 
 ```cpp
-void Dbscan::setInputCloud(pcl::PointCloud<PointType>::Ptr cloud) {
-    input_cloud_ = cloud; // 保存原始点云指针
+void Dbscan::setInputCloud(pcl::PointCloud<rv_fusion::PointRadar>::Ptr cloud) {
+    input_cloud_ = cloud;
     if (input_cloud_->empty()) return;
 
     // 清空内部搜索云
     search_cloud_->clear();
     search_cloud_->points.reserve(input_cloud_->points.size());
 
-    for(const auto& pt : input_cloud_->points){
-        PointType pt_internal = pt;
-
-        if(!use_z_){
-            pt_internal.z = 0.0f; // 2D模式：拍扁Z轴
+    for(const auto& pt : *input_cloud_) {
+        auto pt_processed = pt;
+        if(!config_.use_z) {
+            pt_processed.z = 0.0f;
         }
-        // 如果 use_z_ 为 true (LiDAR模式)，保留原始 Z，KD-Tree 将进行 3D 搜索
-        search_cloud_->push_back(pt_internal);
+        // [新增] 置信度过滤
+        if(config_.use_confidence && pt.confidence < config_.confidence_thresh) {
+            continue;
+        }
+        search_cloud_->push_back(pt_processed);
     }
     // 基于处理后的点云重建 KD-Tree
     tree_->setInputCloud(search_cloud_);
 }
 ```
 
+**Z轴拍扁**：当`use_z=false`时，将Z坐标设为0，将3D问题转为2D；
+
+**置信度过滤**：基于雷达点置信度进行质量筛选；
+
+**KD-Tree构建**：为高效邻域搜索做准备；
+
 ------
 
 ## 核心聚类算法
 
+### 1.1 时间监控和初始化
+
 ```cpp
-void Dbscan::extract(std::vector<pcl::PointIndices>& cluster_indices)
+auto start_time = std::chrono::high_resolution_clock::now();
+clusters.clear();
+if (!search_cloud_ || search_cloud_->empty()) return;
 ```
 
-- **作用**：执行DBSCAN聚类，识别点云中的簇
-- **输入**：`input_cloud_`（通过`setInputCloud`设置）
-- **输出**：`cluster_indices`，包含每个簇的点索引列表
-- **算法类型**：基于密度的空间聚类
+- 精确的性能计时，支持算法优化分析
+- 前置空检查避免无效计算
+- 清空输出参数确保结果一致性
+
+### 1.2 标签系统设计
 
 ```cpp
-开始
-  ↓
-初始化标签数组（全0）
-  ↓
-遍历每个点 i
-  ↓
-if 点i已标记 → 跳过
-else ↓
-获取点i的邻居列表
-  ↓
-if 邻居数 < min_pts → 标记为噪声(-1)
-else ↓
-创建新簇，标记点i为核心点
-  ↓
-初始化BFS队列 = 点i的邻居
-  ↓
-while BFS队列不为空
-  ├─ 取出点j
-  ├─ if 点j是噪声 → 加入当前簇
-  ├─ if 点j已处理 → 跳过
-  ├─ else ↓
-  │   标记点j，加入当前簇
-  │   ↓
-  │   获取点j的邻居
-  │   ↓
-  │   if 点j是核心点 → 扩展BFS队列
-  └─ 继续循环
-  ↓
-保存当前簇
-  ↓
-继续外层循环
+const size_t n_points = search_cloud_->size();
+std::vector<int> labels(n_points, 0);
+int cluster_id = 0;
+```
+
+- `0`：未访问点
+- `-1`：噪声点
+- `>0`：簇ID编号
+
+### 2.1 主循环结构
+
+```cpp
+for (size_t i = 0; i < n_points; ++i) {
+    if (labels[i] != 0) continue;  // 跳过已处理点
+    // ... 聚类逻辑
+}
+```
+
+- 外层循环确保每个点都被处理
+- 标签检查避免重复处理，时间复杂度O(n)
+
+### 2.2 核心点判断
+
+```cpp
+std::vector<int> neighbors;
+getNeighbors(static_cast<int>(i), neighbors);
+
+if (neighbors.size() < config_.min_pts) {
+    labels[i] = -1;
+    statistics_.noise_points++;
+    continue;
+}
+```
+
+**DBSCAN核心概念**：
+
+- **核心点**：邻居数 ≥ min_pts
+- **噪声点**：邻居数 < min_pts 且不被任何核心点可达
+- **边界点**：邻居数 < min_pts 但被核心点可达
+
+### 3.1 BFS队列
+
+```cpp
+// 传统递归DBSCAN（深度优先）
+void expandCluster(int point_idx, int cluster_id) {
+    // 递归调用，可能栈溢出
+}
+
+// 本实现的BFS方法（广度优先）
+std::queue<int> expand_queue;
+std::unordered_set<int> visited;
+```
+
+### 3.2 BFS详细执行流程
+
+```cpp
+cluster_id++;
+labels[i] = cluster_id;
+
+ClusterInfo cluster;
+cluster.indices.indices.push_back(static_cast<int>(i));
+
+std::queue<int> expand_queue;
+std::unordered_set<int> visited;
+
+// 初始邻居入队
+for (int neighbor : neighbors) {
+    expand_queue.push(neighbor);
+    visited.insert(neighbor);
+}
+```
+
+**初始化阶段**：
+
+- 创建新簇ID
+- 当前点作为簇的起始点
+- 初始化BFS数据结构
+
+### 3.3 BFS扩展循环
+
+```cpp
+while (!expand_queue.empty()) {
+    int current_idx = expand_queue.front();
+    expand_queue.pop();
+    
+    // 处理噪声点重新分配
+    if (labels[current_idx] == -1) {
+        labels[current_idx] = cluster_id;
+        cluster.indices.indices.push_back(current_idx);
+    }
+    
+    // 跳过已处理点
+    if (labels[current_idx] != 0) continue;
+    
+    // 标记为当前簇
+    labels[current_idx] = cluster_id;
+    cluster.indices.indices.push_back(current_idx);
+    
+    // 扩展核心点的邻居
+    std::vector<int> current_neighbors;
+    getNeighbors(current_idx, current_neighbors);
+    
+    if (current_neighbors.size() >= config_.min_pts) {
+        for (int neighbor : current_neighbors) {
+            if (visited.find(neighbor) == visited.end()) {
+                expand_queue.push(neighbor);
+                visited.insert(neighbor);
+            }
+        }
+    }
+}
+```
+
+### 4.1 噪声点重新分配机制
+
+```cpp
+if (labels[current_idx] == -1) {
+    labels[current_idx] = cluster_id;  // 噪声点转为簇成员
+    cluster.indices.indices.push_back(current_idx);
+}
+```
+
+**DBSCAN重要特性**：
+
+- 初始标记为噪声的点可能被后续核心点"拯救"
+- 符合密度可达的定义：噪声点可能密度可达某个核心点
+- 确保聚类结果的完整性
+
+### 4.2 访问控制优化
+
+```cpp
+std::unordered_set<int> visited;  // 防止重复入队
+
+if (visited.find(neighbor) == visited.end()) {
+    expand_queue.push(neighbor);
+    visited.insert(neighbor);
+}
+```
+
+**性能优化分析**：
+
+- `unordered_set`的查找复杂度平均O(1)
+- 避免同一节点多次入队，减少重复计算
+- 牺牲少量内存换取显著性能提升
+
+### 4.3 核心点扩展条件
+
+```cpp
+if (current_neighbors.size() >= config_.min_pts) {
+    // 只扩展核心点的邻居
+}
+```
+
+**算法正确性保证**：
+
+- 只有核心点才能继续扩展簇
+- 边界点不参与进一步扩展
+- 符合DBSCAN的密度连接定义
+
+### 5.1 潜在问题
+
+#### 内存碎片化
+
+```
+// 每次循环都创建新的vector和队列
+std::vector<int> neighbors;  // 重复创建销毁
+std::queue<int> expand_queue;
+```
+
+**改进方案**：
+
+```
+// 预分配复用内存
+thread_local std::vector<int> neighbor_buffer;
+thread_local std::queue<int> expand_queue_buffer;
+neighbor_buffer.clear();
+```
+
+#### 类型转换问题
+
+```
+static_cast<int>(i)  // size_t到int转换可能溢出
+```
+
+**改进方案**：
+
+```
+// 使用一致的类型
+using IndexType = int32_t;  // 或根据点云规模选择
+```
+
+### 5.2 算法优化建议
+
+#### 并行化优化
+
+```
+// 可考虑分块并行处理独立密度区域
+#pragma omp parallel for
+for (size_t i = 0; i < n_points; ++i) {
+    if (is_core_point[i]) {
+        // 并行扩展独立簇
+    }
+}
+```
+
+#### 增量聚类支持
+
+```
+// 支持动态点云更新
+void updateClusters(const PointCloud& new_points, 
+                   std::vector<ClusterInfo>& clusters);
 ```
 
 ------
-
-```cpp
-// labels 用于标记每个点的状态：
-// 0: 未处理 (Unvisited)
-// -1: 噪声 (Noise)
-// >0: 簇 ID (Cluster ID)
-std::vector<int> labels(n_points, 0);
-```
-
-### 簇ID管理
-
-```cpp
-int cluster_id = 0;
-// ...
-cluster_id++;
-labels[i] = cluster_id;
-```
-
-- 初始`cluster_id = 0`
-- 发现新簇时先自增：`cluster_id++`，然后分配
-- 因此第一个簇的ID是1，第二个是2，依此类推
-- 最终簇数量 = `cluster_id`
-
-### 外层循环：遍历所有点
-
-- 顺序遍历所有点
-- 通过`labels[i] != 0`跳过已处理的点
-- 确保每个点只被处理一次
-
-```cpp
-for (int i = 0; i < n_points; ++i) {
-        if (labels[i] != 0) continue; // 如果已经归类或者是已知的噪声，跳过
-
-        // 寻找当前点的所有“合格”邻居
-        std::vector<int> neighbors;
-        getNeighbors(i, neighbors); 
-
-        // 密度判断：如果邻居太少，标记为噪声
-        if (neighbors.size() < min_pts_) {
-            labels[i] = -1; 
-            continue;
-        }
-```
-
-- **核心点**：邻居数 ≥ `min_pts_`
-- **噪声点**：邻居数 < `min_pts_`，且后续没有被任何核心点连接
-- **边缘点**：邻居数 < `min_pts_`，但在某个核心点的邻域内
-
-### 内层循环：区域生长（BFS）
-
-```cpp
-// --- 发现核心点，开始建立新簇 ---
-        cluster_id++;
-        labels[i] = cluster_id;
-
-        pcl::PointIndices current_cluster;
-        current_cluster.indices.push_back(i);
-```
-
-- 分配新簇ID
-- 将当前核心点标记为该簇
-- 创建簇容器，加入核心点索引
-
-```cpp
-for (size_t k = 0; k < neighbors.size(); ++k) {
-            int neighbor_idx = neighbors[k];
-
-            // 情况 A: 之前被标记为噪声的点
-            // (说明它虽不是核心点，但在当前核心点的邻域内 -> 它是边缘点)
-            if (labels[neighbor_idx] == -1) {
-                labels[neighbor_idx] = cluster_id; // 归入当前簇
-                current_cluster.indices.push_back(neighbor_idx);
-            }
-
-            // 情况 B: 已经处理过的点，跳过
-            if (labels[neighbor_idx] != 0) continue;
-
-            // 情况 C: 全新的点
-            labels[neighbor_idx] = cluster_id; // 归入当前簇
-            current_cluster.indices.push_back(neighbor_idx);
-
-            // 检查这个新点是否也是核心点？
-            std::vector<int> sub_neighbors;
-            getNeighbors(neighbor_idx, sub_neighbors); // 递归式搜索
-        }
-```
-
-**BFS实现特点**：
-
-- 使用`vector`模拟队列，但通过下标遍历
-- 循环中会动态扩展`neighbors`列表
-- 这种设计允许在遍历时添加新元素
-
-### 动态扩展机制
-
-```cpp
-// 如果它也是核心点，把它发现的邻居加入大部队，继续向外扩
-            if (sub_neighbors.size() >= min_pts_) {
-                neighbors.insert(neighbors.end(), sub_neighbors.begin(), sub_neighbors.end());
-            }
-```
-
-- 将新核心点的所有邻居加入`neighbors`列表
-- 使用`insert`在末尾添加，避免影响当前遍历
-- 新增的邻居会在后续迭代中被处理
-
-**潜在问题**：
-
-1. **重复点**：`sub_neighbors`可能包含已在`neighbors`中的点
-2. **内存增长**：`neighbors`可能变得很大
-3. **顺序问题**：BFS变成类似DFS，取决于插入位置
 
 ## 邻域搜索算法
 
@@ -217,7 +307,7 @@ void Dbscan::getNeighbors(int index, std::vector<int>& neighbors)
 ```
 
 - **输入**：`index`- 查询点在`search_cloud_`中的索引
-- **输出**：`neighbors`- 符合条件的邻居点索引列表
+- **输出**：`neighbors`- 符合条件的邻居点索引列表，通过引用返回结果，避免拷贝开销
 - **作用**：找到与查询点在空间和速度上都相似的点
 
 ```cpp
@@ -230,14 +320,14 @@ void Dbscan::getNeighbors(int index, std::vector<int>& neighbors)
 ```cpp
 std::vector<int> k_indices;
 std::vector<float> k_sqr_distances;
-PointType searchPoint = search_cloud_->points[index];
+const auto& search_point = search_cloud_->points[index];
 ```
 
 **变量说明**：
 
 - `k_indices`：临时存储空间邻居的索引
 - `k_sqr_distances`：临时存储到查询点的平方距离
-- `searchPoint`：查询点的副本
+- `search_point`：查询点的副本
 
 **内存管理**：
 
@@ -247,7 +337,7 @@ PointType searchPoint = search_cloud_->points[index];
 ### KD-Tree空间粗筛
 
 ```cpp
-tree_->radiusSearch(searchPoint, eps_dist_, k_indices, k_sqr_distances);
+tree_->radiusSearch(search_point, config_.eps_dist, k_indices, k_sqr_distances);
 
 // PCL KD-Tree 内部实现简化
 class KdTree {
@@ -307,27 +397,28 @@ neighbors.reserve(k_indices.size());
 - 减少内存碎片和分配开销
 
 ```cpp
-if(use_vel_){
-            // 假设 intensity 存储速度，进行加权距离计算
-            float vel_diff = std::abs(search_cloud_->points[idx].intensity - searchPoint.intensity);
+if(config_.use_vel) {
+      const auto& target_point = search_cloud_->points[idx];
+      float vel_diff = std::abs(target_point.velocity - search_point.velocity);
 
-            // 归一化椭球距离公式
-            float normalized_dist = (dist_sqr / (eps_dist_ * eps_dist_)) + 
-                                    (vel_diff * vel_diff) / (eps_vel_ * eps_vel_);
+      // [改进] 更稳健的距离计算，避免除零
+      float eps_dist_sqr = config_.eps_dist * config_.eps_dist;
+      float eps_vel_sqr = config_.eps_vel * config_.eps_vel;
 
-            if (normalized_dist <= 1.0f) {
-                neighbors.push_back(idx);
-            }
-        }
-        else{
-            // --- LiDAR 模式 (纯空间聚类) ---
-            // 直接接受 KD-Tree 的结果 (因为 KD-Tree 已经保证了 dist < eps_dist)
-            // 此时忽略 intensity (反射率)，防止把同一物体不同反射率的部分切开
-            neighbors.push_back(idx);
-        }
+      float normalized_dist = (dist_sqr / eps_dist_sqr) + 
+        (vel_diff * vel_diff) / eps_vel_sqr;
+
+      if (normalized_dist <= 1.0f) {
+        neighbors.push_back(idx);
+      }
+    } 
+		else {
+      	neighbors.push_back(idx);
 ```
 
-------
+- velocity：雷达测量的径向速度（沿雷达射线方向）；
+- 同一运动目标的点应该具有相似的速度特征；
+- 速度差异有助于区分空间接近但运动状态不同的目标
 
 # 雷达聚类节点代码详解
 
