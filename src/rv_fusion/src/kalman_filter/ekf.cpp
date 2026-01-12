@@ -34,10 +34,10 @@ void ExtendedKalmanFilter::validateConfiguration() const {
         throw std::invalid_argument("Measurement dimension must be 4 for [px, py, vx, vy]");
     }
     // 检查噪声参数合理性
-    if (config_.std_a <= 0) {
+    if (config_.process_noise.std_a <= 0) {
         throw std::invalid_argument("Linear acceleration noise must be positive");
     }
-    if (config_.std_yawdd <= 0) {
+    if (config_.process_noise.std_yawdd <= 0) {
         throw std::invalid_argument("Angular acceleration noise must be positive");
     }
     if (config_.meas_noise.std_px <= 0 || config_.meas_noise.std_py <= 0 ||
@@ -45,9 +45,9 @@ void ExtendedKalmanFilter::validateConfiguration() const {
         throw std::invalid_argument("Measurement noise standard deviations must be positive");
     }
     // 输出配置警告
-    if (config_.std_a < 0.5 || config_.std_a > 5.0) {
+    if (config_.process_noise.std_a < 0.5 || config_.process_noise.std_a > 5.0) {
         std::cerr << "Warning: Unusual linear acceleration noise: " 
-                  << config_.std_a << " m/s²" << std::endl;
+                  << config_.process_noise.std_a << " m/s²" << std::endl;
     }
 }
 
@@ -189,7 +189,7 @@ double ExtendedKalmanFilter::calculateAdaptiveYawUncertainty(double speed) const
     if (speed < 5.0) {
         double ratio = (speed - 1.0) / 4.0; 
         // 线性从 PI 降到 std_yaw (比如 0.1)
-        return M_PI - ratio * (M_PI - config_.std_yaw);
+        return M_PI - ratio * (M_PI - config_.init_params.initial_std_yaw);
     }
     // 正常行驶
     else {
@@ -201,7 +201,7 @@ double ExtendedKalmanFilter::calculateAdaptiveYawUncertainty(double speed) const
 // 辅助函数：初始化状态间相关性
 void ExtendedKalmanFilter::initializeCrossCorrelations(double speed, double yaw, 
                                                        double speed_std, double yaw_std) {
-    if (speed > config_.predict_params.epsilon) { // 使用配置的epsilon阈值
+    if (speed > config_.thresholds.epsilon_yaw_rate) { // 使用配置的epsilon阈值
         double cos_yaw = std::cos(yaw);
         double sin_yaw = std::sin(yaw);
         double corr = config_.init_params.position_correlation;
@@ -360,8 +360,8 @@ void ExtendedKalmanFilter::predict(double dt) {
 
     // --- 3. 自适应过程噪声 Q (Adaptive Process Noise) ---
     // 将原本分散在 params, helper 里的逻辑整合在此
-    double std_a = config_.std_a;         // 基础加速度噪声
-    double std_yawdd = config_.std_yawdd; // 基础角加速度噪声
+    double std_a = config_.process_noise.std_a;         // 基础加速度噪声
+    double std_yawdd = config_.process_noise.std_yawdd; // 基础角加速度噪声
     
     // 3.1 自适应因子计算
     double speed_factor = 1.0;
@@ -453,7 +453,7 @@ void ExtendedKalmanFilter::updatePosition(const Eigen::Vector2d& pos_meas) {
     // 针对 H 的特殊结构，可以直接优化计算，这里为了通用性写全
     Eigen::MatrixXd S = H * P_ * H.transpose() + R_pos;
 
-    if (validateMeasurement(innovation, S, config_.pos_gating_threshold)) {
+    if (validateMeasurement(innovation, S, config_.thresholds.pos_gating_threshold)) {
         performUpdate(pos_meas, H, R_pos, innovation);
     }
 }
@@ -477,7 +477,7 @@ void ExtendedKalmanFilter::updateVelocity(const Eigen::Vector2d& vel_meas) {
     Eigen::MatrixXd R_vel = R_.block(2, 2, 2, 2);
     Eigen::MatrixXd S = H * P_ * H.transpose() + R_vel;
 
-    if (validateMeasurement(innovation, S, config_.vel_gating_threshold)) {
+    if (validateMeasurement(innovation, S, config_.thresholds.vel_gating_threshold)) {
         performUpdate(vel_meas, H, R_vel, innovation);
     }
 }

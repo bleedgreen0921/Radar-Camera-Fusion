@@ -58,8 +58,14 @@ public:
         nh_.param("eps_vel", eps_vel, 2.0);
         nh_.param("min_pts", min_pts, 3);
 
+        // 1. 创建配置结构体
+        Dbscan::Config dbscan_config;
+        dbscan_config.eps_dist = eps_dist;
+        dbscan_config.eps_vel = eps_vel;
+        dbscan_config.min_pts = min_pts;
+
         // 初始化算法
-        dbscan_ = std::make_shared<Dbscan>(eps_dist, eps_vel, min_pts, false, true);
+        dbscan_ = std::make_shared<Dbscan>(dbscan_config);
         tracker_ = std::make_unique<rv_fusion::ObjectTracker>(); // 初始化 Tracker
 
         cloud_raw_.reset(new pcl::PointCloud<PointType>);
@@ -89,18 +95,18 @@ public:
         dbscan_->setInputCloud(cloud_raw_);
 
         // 3. 执行聚类
-        std::vector<pcl::PointIndices> cluster_indices;
-        dbscan_->extract(cluster_indices);
+        std::vector<Dbscan::ClusterInfo> cluster_infos;
+        dbscan_->extract(cluster_infos);
 
         // --- 2. 提取测量值 (Detections) ---
         std::vector<Eigen::Vector4d> detections;
-        for (const auto& indices : cluster_indices) {
-            if (indices.indices.empty()) continue;
+        for (const auto& cluster : cluster_infos) {
+            if (cluster.indices.indices.empty()) continue;
 
             double sum_x = 0, sum_y = 0, sum_vx = 0, sum_vy = 0;
-            int count = indices.indices.size();
+            int count = cluster.indices.indices.size();
 
-            for (int idx : indices.indices) {
+            for (int idx : cluster.indices.indices) {
                 const auto& pt = cloud_raw_->points[idx];
                 sum_x += pt.x;
                 sum_y += pt.y;

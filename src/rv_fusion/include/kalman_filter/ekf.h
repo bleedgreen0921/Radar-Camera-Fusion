@@ -15,65 +15,56 @@ public:
     // EKF 配置结构体 (针对 nuScenes 优化)
     // ==========================================
     struct EKFConfig {
-        // 状态维度: [px, py, v, yaw, yaw_rate]
-        int state_dim = 5;    
-        // 测量维度: [px, py, vx, vy]
-        int meas_dim = 4;     
+        int state_dim;
+    int meas_dim;
 
-        // --- 1. 过程噪声参数 (Process Noise) ---
-        struct ProcessNoise {
-            // nuScenes城市路况，加减速频繁，设为 2.0 m/s^2
-            double std_a = 2.0;             
-            // 转弯和变道频繁，角加速度噪声设为 1.5 rad/s^2
-            double std_yawdd = 1.5;         
-            // 高速行驶时模型更稳定，噪声衰减因子
-            double high_speed_decay_factor = 0.8; 
-            // 急转弯时模型不准，噪声增强因子
-            double turn_amplification_factor = 2.0; 
-        } process_noise;
-        
-        // --- 2. 测量噪声参数 (Measurement Noise) ---
-        // 基于 PointPillars/CenterPoint 等检测器在 nuScenes 上的典型误差
-        struct MeasurementNoise {
-            double std_px = 0.5;    // 激光/雷达位置误差 X (m)
-            double std_py = 0.5;    // 激光/雷达位置误差 Y (m)
-            double std_vx = 1.0;    // 速度测量误差 X (m/s)
-            double std_vy = 1.0;    // 速度测量误差 Y (m/s)
-        } meas_noise;
-        
-        // --- 3. 初始化参数 (Initialization) ---
-        struct InitParams {
-            // 速度阈值：大于 1.0 m/s 时才信任速度矢量计算的航向角
-            double min_speed_for_yaw = 1.0;        
-            
-            // 初始协方差设置
-            double initial_std_v = 5.0;            // 初始速度不确定性
-            double initial_std_yaw = M_PI;         // 初始航向不确定性 (静止时为PI)
-            double initial_std_yawrate = 1.0;      // 初始转向率不确定性
-            
-            // 相关性系数
-            double position_correlation = 0.0;     // 初始位置-速度相关性
-        } init_params;
-        
-        // --- 4. 阈值与边界 (Thresholds) ---
-        struct Thresholds {
-            // CTRV模型切换阈值：角速度 < 0.001 rad/s 视为直线
-            double epsilon_yaw_rate = 0.001;       
-            
-            // 速度区间定义 (m/s)
-            double speed_static = 1.0;             // 静止/蠕行上限
-            double speed_city = 15.0;              // 城市巡航上限
-            double speed_highway = 22.0;           // 高速公路下限 (80km/h)
+    struct ProcessNoise {
+        double std_a;
+        double std_yawdd;
+        double high_speed_decay_factor;
+        double turn_amplification_factor;
+    } process_noise;
 
-            // 门控阈值 (Chi-square dist, 4-sigma)
-            double pos_gating_threshold = 4.0;     
-            double vel_gating_threshold = 4.0;     
-        } thresholds;
+    struct MeasurementNoise {
+        double std_px;
+        double std_py;
+        double std_vx;
+        double std_vy;
+    } meas_noise;
 
-        // --- 5. 数值稳定性边界 ---
-        struct NoiseBounds {
-            double min_covariance = 1e-9;          // 最小协方差对角线值
-        } bounds;
+    struct InitParams {
+        double min_speed_for_yaw;
+        double initial_std_v;
+        double initial_std_yaw;
+        double initial_std_yawrate;
+        double position_correlation;
+    } init_params;
+
+    struct Thresholds {
+        double epsilon_yaw_rate;
+        double speed_static;
+        double speed_city;
+        double speed_highway;
+        double pos_gating_threshold;
+        double vel_gating_threshold;
+    } thresholds;
+
+    struct NoiseBounds {
+        double min_covariance;
+    } bounds;
+
+    // 2. 添加构造函数进行统一初始化
+    EKFConfig() {
+        state_dim = 5;
+        meas_dim = 4;
+        
+        // 使用聚合初始化列表
+        process_noise = {2.0, 1.5, 0.8, 2.0};
+        meas_noise = {0.5, 0.5, 1.0, 1.0};
+        init_params = {1.0, 5.0, M_PI, 1.0, 0.0};
+        thresholds = {0.001, 1.0, 15.0, 22.0, 4.0, 4.0};
+        bounds = {1e-9};
+    }
     };
 
     // ==========================================

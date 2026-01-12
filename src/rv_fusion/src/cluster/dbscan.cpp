@@ -1,5 +1,8 @@
 #include "cluster/dbscan.h"
 #include <cmath>
+#include <chrono>
+#include <queue>
+#include <unordered_set>
 
 // =========================================================================
 // [新增] 关键修复：引入 PCL 模板实现文件 (.hpp)
