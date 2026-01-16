@@ -285,6 +285,19 @@ gtest/fast:
 .PHONY : gtest/fast
 
 #=============================================================================
+# Target rules for targets named radar_converter_node
+
+# Build rule for target.
+radar_converter_node: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 radar_converter_node
+.PHONY : radar_converter_node
+
+# fast build rule for target.
+radar_converter_node/fast:
+	$(MAKE) -f rv_fusion/CMakeFiles/radar_converter_node.dir/build.make rv_fusion/CMakeFiles/radar_converter_node.dir/build
+.PHONY : radar_converter_node/fast
+
+#=============================================================================
 # Target rules for targets named radar_cluster_node
 
 # Build rule for target.
@@ -1260,6 +1273,19 @@ actionlib_generate_messages_eus/fast:
 .PHONY : actionlib_generate_messages_eus/fast
 
 #=============================================================================
+# Target rules for targets named projection_node
+
+# Build rule for target.
+projection_node: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 projection_node
+.PHONY : projection_node
+
+# fast build rule for target.
+projection_node/fast:
+	$(MAKE) -f rv_fusion/CMakeFiles/projection_node.dir/build.make rv_fusion/CMakeFiles/projection_node.dir/build
+.PHONY : projection_node/fast
+
+#=============================================================================
 # Target rules for targets named tf_generate_messages_py
 
 # Build rule for target.
@@ -1411,6 +1437,7 @@ help:
 	@echo "... gmock"
 	@echo "... gtest_main"
 	@echo "... gtest"
+	@echo "... radar_converter_node"
 	@echo "... radar_cluster_node"
 	@echo "... tf_generate_messages_nodejs"
 	@echo "... tf_generate_messages_lisp"
@@ -1486,6 +1513,7 @@ help:
 	@echo "... actionlib_msgs_generate_messages_cpp"
 	@echo "... rosgraph_msgs_generate_messages_cpp"
 	@echo "... actionlib_generate_messages_eus"
+	@echo "... projection_node"
 	@echo "... tf_generate_messages_py"
 	@echo "... std_msgs_generate_messages_eus"
 	@echo "... actionlib_msgs_generate_messages_lisp"

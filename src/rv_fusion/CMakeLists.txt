@@ -20,6 +20,8 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_geometry_msgs 
   eigen_conversions 
   pcl_ros
+  cv_bridge
+  image_transport
   )
   find_package(PCL REQUIRED)
 ## System dependencies are found with CMake's conventions
@@ -150,6 +152,19 @@ add_executable(radar_cluster_node
   src/utils/hungarian.cpp
 )
 target_link_libraries(radar_cluster_node
+${catkin_LIBRARIES}
+${PCL_LIBRARIES}
+)
+
+add_executable(projection_node src/fusion/projection_node.cpp)
+target_link_libraries(projection_node 
+${catkin_LIBRARIES}
+${PCL_LIBRARIES}
+${OpenCV_LIBRARIES}
+)
+
+add_executable(radar_converter_node /home/qjj/桌面/RV_Fusion_ws/src/radar_to_pcl_trans.cpp)
+target_link_libraries(radar_converter_node
 ${catkin_LIBRARIES}
 ${PCL_LIBRARIES}
 )
