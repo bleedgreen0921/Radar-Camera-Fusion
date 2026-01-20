@@ -7,6 +7,4 @@
 # new environment variables
 
 # modified environment variables
-export LD_LIBRARY_PATH='/home/qjj/桌面/nus2bag_ws/devel/lib:/opt/ros/noetic/lib'
-export PKG_CONFIG_PATH='/home/qjj/桌面/nus2bag_ws/devel/lib/pkgconfig:/opt/ros/noetic/lib/pkgconfig'
 export PWD='/home/qjj/桌面/RV_Fusion_ws/build'

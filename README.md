@@ -99,3 +99,12 @@ output_msg.header.stamp = (pub_stamp == ros::Time(0))
 
 ## 二、目标检测与聚类算法
 
+运行步骤：
+终端1：
+roscore
+rosparam set use_sim_time true
+
+2：rosrun rv_fusion node
+
+3. rosbag play --clock bag --loop
+

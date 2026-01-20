@@ -12,6 +12,7 @@
         "/home/qjj/桌面/nus2bag_ws/src/radar_camera_fusion/include/**",
         "/home/qjj/桌面/nus2bag_ws/src/radar_converter/include/**",
         "/home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/include/**",
+        "/home/qjj/yolo_ws/devel/include",
         "/usr/include/**"
       ],
       "name": "ROS",

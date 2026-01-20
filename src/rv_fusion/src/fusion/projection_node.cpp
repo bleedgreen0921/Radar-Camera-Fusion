@@ -89,6 +89,38 @@ private:
         last_radar_ = msg;
     }
 
+    /* --- 辅助函数：根据深度生成伪彩色 (Jet Colormap) --- */
+    cv::Scalar getDepthColor(double depth, double max_depth = 60.0)
+    {
+        // 归一化深度 [0, 1]
+        double val = std::min(std::max(depth / max_depth, 0.0), 1.0);
+        
+        // 简单的热力图映射：近=红 -> 黄 -> 绿 -> 蓝=远
+        // OpenCV 的 Hue 范围是 0-180
+        // 我们让近处(0m)为红色(0)，远处(max)为蓝色(120)
+        // 注意：OpenCV HSV 中 H=0是红, H=60是绿, H=120是蓝
+        
+        // 这里使用更直观的 BGR 转换逻辑
+        int r, g, b;
+        if (val < 0.5) {
+            // 红 -> 绿
+            double interp = val * 2.0;
+            b = 0;
+            g = static_cast<int>(255 * interp);
+            r = static_cast<int>(255 * (1 - interp));
+        } else {
+            // 绿 -> 蓝
+            double interp = (val - 0.5) * 2.0;
+            b = static_cast<int>(255 * interp);
+            g = static_cast<int>(255 * (1 - interp));
+            r = 0;
+        }
+        // 特殊处理：极近处为亮红
+        if(val < 0.1) return cv::Scalar(0, 0, 255);
+        
+        return cv::Scalar(b, g, r); // OpenCV 使用 BGR
+    }
+
     /* ---------------- Core Logic ---------------- */
 
     void tryProject()
@@ -109,14 +141,13 @@ private:
         }
 
         cv::Mat image = cv_ptr->image;
-        int width = image.cols;
-        int height = image.rows;
+        // 1. 投影 LiDAR (开启高度过滤 + 深度上色)
+        if (last_lidar_)
+            projectCloud(last_lidar_, "cam_front", image, cv::Scalar(0,255,0), 1, true);
 
-        projectCloud(last_lidar_, "cam_front", image,
-                     cv::Scalar(0,255,0), 1);   // LiDAR green
-
-        projectCloud(last_radar_, "cam_front", image,
-                     cv::Scalar(0,0,255), 4);   // Radar red
+        // 2. 投影 Radar (红色，不开启深度上色，因为雷达点少且需要醒目)
+        if (last_radar_)
+            projectCloud(last_radar_, "cam_front", image, cv::Scalar(0,0,255), 4, false);
 
         sensor_msgs::Image out;
         cv_bridge::CvImage(last_image_->header, "bgr8", image).toImageMsg(out);
@@ -127,8 +158,9 @@ private:
         const sensor_msgs::PointCloud2ConstPtr& cloud_msg,
         const std::string& target_frame,
         cv::Mat& image,
-        const cv::Scalar& color,
-        int radius)
+        const cv::Scalar& base_color,
+        int radius,
+        bool is_lidar)
     {
         pcl::PointCloud<pcl::PointXYZ> cloud;
         pcl::fromROSMsg(*cloud_msg, cloud);
@@ -152,6 +184,10 @@ private:
 
         for (const auto& p : cloud.points)
         {
+            if (is_lidar && p.z < -1.5) {
+                continue; 
+            }
+
             Eigen::Vector3d pt(p.x, p.y, p.z);
             Eigen::Vector3d cam_pt = T * pt;
 
@@ -161,11 +197,16 @@ private:
             int u = static_cast<int>(fx_ * cam_pt.x() / cam_pt.z() + cx_);
             int v = static_cast<int>(fy_ * cam_pt.y() / cam_pt.z() + cy_);
 
-            if (u >= 0 && u < image.cols &&
-                v >= 0 && v < image.rows)
+            if (u >= 0 && u < image.cols && v >= 0 && v < image.rows)
             {
-                cv::circle(image, cv::Point(u,v),
-                           radius, color, -1);
+                cv::Scalar draw_color = base_color;
+                
+                // --- 深度上色 ---
+                if (is_lidar) {
+                    draw_color = getDepthColor(cam_pt.z());
+                }
+
+                cv::circle(image, cv::Point(u,v), radius, draw_color, -1);
             }
         }
     }

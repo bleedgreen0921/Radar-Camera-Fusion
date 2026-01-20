@@ -1,5 +1,5 @@
 /*
-雷达数据聚合节点 (TF2 深度优化版)：
+雷达数据聚合节点：
  * 1. 订阅 nuscenes2bag::RadarObjects
  * 2. 使用 TF2 + Eigen 将点变换到车身坐标系
  * 3. 使用双缓冲 (Double Buffering) 无锁/低延迟聚合
@@ -26,9 +26,8 @@
 // 线程与同步
 #include <mutex>
 #include "common/point_types.h"
-// 使用自定义类型
+
 typedef rv_fusion::PointRadar PointType;
-// typedef pcl::PointXYZI PointType; PointXYZI中的I只存储强度，也就是速度标量，无法利用速度分量进行EKF
 
 class RadarAggregator {
 private:

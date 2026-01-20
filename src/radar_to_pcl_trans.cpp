@@ -19,6 +19,8 @@
 // 自定义雷达消息。(我们的“输入”格式)
 // 你要订阅的、来自 nuscenes2bag 包的自定义 RadarObjects 消息的定义
 #include <nuscenes2bag/RadarObjects.h>
+#include <cmath>
+#include "common/point_types.h"
 
 class RadarConverter
 {
@@ -42,6 +44,10 @@ public:
     }
 
 private:
+    const double MIN_SPEED_THRESHOLD = 0.5; // 速度阈值 (m/s)，低于此值视为静止/杂波
+    const double MIN_Z_THRESHOLD = -0.5;     // 雷达高度下限 (NuScenes 雷达安装高度约0.5m，过低通常是地面反射)
+    const double MAX_Z_THRESHOLD = 2.0;     // 雷达高度上限 (打天上的点通常是噪声)
+
     // 3. (核心) 回调函数 (我们之前讨论的“工作手册”)
     void radarCallback(const nuscenes2bag::RadarObjects::ConstPtr& msg)
     {
@@ -55,6 +61,12 @@ private:
         {
             // 从“富矿”数据中提取 x, y, z
             // (注意：我们暂时只用了 x,y,z。我们未来还可以用 vx, vy, rcs！)
+
+            double  speed = std::sqrt(std::pow(object.vx_comp, 2) + std::pow(object.vy_comp, 2));
+            if(speed < MIN_SPEED_THRESHOLD) continue;
+
+            if(object.pose.z < MIN_Z_THRESHOLD || object.pose.z > MAX_Z_THRESHOLD) continue;
+
             pcl_cloud->emplace_back(
                 object.pose.x,
                 object.pose.y,

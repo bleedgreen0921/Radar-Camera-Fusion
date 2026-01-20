@@ -29,12 +29,14 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/home/qjj/桌面/RV_Fusion_ws/src/rv_fusion/include"
+  "/home/qjj/桌面/RV_Fusion_ws/devel/include"
   "/home/qjj/桌面/nus2bag_ws/devel/include"
   "/home/qjj/桌面/nus2bag_ws/src/nuscenes2rosbag/include"
   "/home/qjj/桌面/nus2bag_ws/src/nuscenes2rosbag/thirdparty/json"
   "/opt/ros/noetic/include"
   "/opt/ros/noetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp"
   "/usr/include/opencv4"
+  "/home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/include"
   "/usr/include/vtk-7.1"
   "/usr/include/freetype2"
   "/usr/include/eigen3"

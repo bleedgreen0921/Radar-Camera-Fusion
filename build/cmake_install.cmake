@@ -146,6 +146,7 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/qjj/桌面/RV_Fusion_ws/build/gtest/cmake_install.cmake")
+  include("/home/qjj/桌面/RV_Fusion_ws/build/ultralytics_ros/cmake_install.cmake")
   include("/home/qjj/桌面/RV_Fusion_ws/build/rv_fusion/cmake_install.cmake")
 
 endif()

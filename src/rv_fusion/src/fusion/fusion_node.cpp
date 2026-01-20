@@ -1,202 +1,327 @@
 /**
  * @file fusion_node.cpp
- * @brief 雷达与相机的时空同步节点
+ * @brief YOLO图像、毫米波雷达、激光雷达时空同步节点
  * @details 使用 message_filters::ApproximateTime 策略实现“拉链式”数据对齐
  */
 
- // 1. ROS 核心头文件
 #include <ros/ros.h>
-
-// 2. 消息类型头文件 (你的两个输入)
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/CameraInfo.h>
+#include <ultralytics_ros/YoloResult.h> 
+#include <visualization_msgs/MarkerArray.h>
 
-// 3. MessageFilters 库头文件 (同步的神器)
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
-// PCL (点云处理)
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 
-// OpenCV (图像处理)
-#include <cv_bridge/cv_bridge.h>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-
-// TF & Eigen (坐标变换与数学运算)
-#include <tf/transform_listener.h>
-#include <tf_conversions/tf_eigen.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_eigen/tf2_eigen.h>
 #include <Eigen/Dense>
 
-// 相机参数消息类型
-#include <sensor_msgs/CameraInfo.h>
+#include "common/point_types.h"
 
-namespace radar_fusion{
-    
-// 定义类型别名
-typedef sensor_msgs::Image ImageMsg;
-typedef sensor_msgs::PointCloud2 RadarMsg;
-typedef message_filters::sync_policies::ApproximateTime<ImageMsg, RadarMsg> SyncPolicy;
+struct FusedObject{
+    std::string class_id; // 类别
+    int track_id;         // YOLO 的 ID
+    double x, y, z; 
+    double vx, vy; 
+    double width, height, length;
+};
 
-class Fusion_node{
-private:
-    ros::NodeHandle nh_;
-
-    message_filters::Subscriber<ImageMsg> sub_image_;
-    message_filters::Subscriber<RadarMsg> sub_radar_;
-    boost::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
-
-    // 发布结果
-    ros::Publisher pub_fusion_image_;
-
-    // TF监听器（用来查外参）
-    tf::TransformListener tf_listener_;
-
-    // 相机内参矩阵
-    Eigen::Matrix3d camera_intrinsic_;
-
-    ros::Subscriber sub_cam_info_; // 专门订阅参数
-    bool has_intrinsics_; // 标志位：是否接收到了参数
+class FusionNode{
 
 public:
-    Fusion_node() : nh_("~"){
-        // 订阅话题
-        sub_image_.subscribe(nh_,"/cam_front/raw", 1);
-        sub_radar_.subscribe(nh_, "/radar_front/pointcloud", 1);
+    FusionNode() : tf_listener_(tf_buffer_) {
+        ros::NodeHandle nh;
 
-        // 初始化同步器
-        sync_.reset(new message_filters::Synchronizer<SyncPolicy>(
-            SyncPolicy(10), sub_image_, sub_radar_));
-        sync_->registerCallback(boost::bind(&Fusion_node::syncCallback, 
-            this, _1, _2));
+        // 1. 订阅 Camera Info (获取内参)
+        cam_info_sub_ = nh.subscribe("/cam_front/camera_info", 1, &FusionNode::camInfoCallback, this);
 
-        // 初始化结果发布者
-        pub_fusion_image_ = nh_.advertise<sensor_msgs::Image>("/fusion/image_projected", 1);
+        // 2. 订阅传感器数据
+        yolo_sub_.subscribe(nh, "/yolo_result", 1);
+        lidar_sub_.subscribe(nh, "/lidar_top", 1); 
+        radar_sub_.subscribe(nh, "/radar/front_pointcloud", 1); // 聚合后的雷达点云
 
-        // 动态订阅相机内参矩阵
-        sub_cam_info_ = nh_.subscribe("/cam_front/camera_info", 1,
-                                      &Fusion_node::camInfoCallback, this);
+        // 3. 定义同步策略 (容差 0.1s)
+        typedef message_filters::sync_policies::ApproximateTime<
+            ultralytics_ros::YoloResult, 
+            sensor_msgs::PointCloud2, 
+            sensor_msgs::PointCloud2
+        > MySyncPolicy;
 
-        ROS_INFO("Fusion Node Initialized. Ready to Project!");
-
-    }
-
-    void syncCallback(const ImageMsg::ConstPtr& img,
-                      const RadarMsg::ConstPtr& radar){
-        // 安全检查：如果还没收到内参，就不能投影
-        if (!has_intrinsics_) {
-            ROS_WARN_THROTTLE(2.0, "Waiting for camera intrinsics...");
-            return;
-        }
-
-        // -------------------------------------------------------
-        // Step 1: 获取坐标变换 (Extrinsics) T_cam_radar
-        // -------------------------------------------------------
-        tf::StampedTransform transform;
-        try{
-            // 核心逻辑：询问 TF 树 "请给我从 radar_front 到 cam_front 的变换"
-            // 参数1: 目标坐标系 (Target) -> cam_front
-            // 参数2: 源坐标系 (Source)   -> radar_front
-            // 参数3: 时间 (ros::Time(0) 代表取最新可用的变换)
-            tf_listener_.lookupTransform("cam_front", "radar_front",
-            ros::Time(0), transform);
-        }
-        catch (tf::TransformException& ex){
-            ROS_WARN_THROTTLE(1.0, "Could not get transform: %s", ex.what());
-            return;
-        }
-
-        // 把 ROS 的 TF 格式转换为 Eigen 的矩阵格式 (Isometry3d)
-        Eigen::Isometry3d T_cam_radar;
-        tf::transformTFToEigen(transform, T_cam_radar);
-
-        // -------------------------------------------------------
-        // Step 2: 准备图像 (ROS -> OpenCV)
-        // -------------------------------------------------------
-        cv_bridge::CvImagePtr cv_ptr;
-        try{
-            // 把 ROS 图像消息转成 OpenCV 的 cv::Mat 格式
-            cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
-        }
-        catch(cv_bridge::Exception& e){
-            ROS_ERROR("cv_bridge exception: %s", e.what());
-            return;
-        }
-
-        // -------------------------------------------------------
-        // Step 3: 处理点云 & 投影核心数学公式
-        // -------------------------------------------------------
-        // 把 ROS 点云消息转成 PCL 格式，方便遍历
-        pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
-        pcl::fromROSMsg(*radar, pcl_cloud);
-
-        for(const auto& pt : pcl_cloud.points){
-            // A. 取出雷达点 P_radar (x, y, z)
-            Eigen::Vector3d p_radar(pt.x, pt.y, pt.z);
-
-            // B. 刚体变换: P_radar -> P_cam (相机坐标系下的点)
-            Eigen::Vector3d p_cam = T_cam_radar * p_radar;
-
-            // C. 过滤: 如果点在相机背面 (z < 0)，就不画
-            if(p_cam.z() < 0.5) continue;
-
-            // D. 内参投影: P_cam -> P_pixel (像素坐标)
-            // 公式: P_pixel = K * P_cam
-            Eigen::Vector3d p_pixel = camera_intrinsic_ * p_cam;
-
-            // E. 归一化 (透视除法): u = x/z, v = y/z
-            // 也就是把 "锥形" 的光束压扁到 "平面" 上
-            int u = static_cast<int>(p_pixel.x() / p_pixel.z());
-            int v = static_cast<int>(p_pixel.y() / p_pixel.z());
-
-            // -------------------------------------------------------
-            // Step 4: 在图上画圈 (Visualization)
-            // -------------------------------------------------------
-            // 检查 u, v 是否跑到了图像外面
-            if(u >= 0 && u < cv_ptr->image.cols && 
-               v >= 0 && cv_ptr->image.rows){
-                // 画一个红色的实心圆
-                // 参数: 图, 圆心(u,v), 半径, 颜色(BGR), 线宽
-                cv::circle(cv_ptr->image, cv::Point(u,v), 5, CV_RGB(255, 0, 0), -1);
-
-                // (可选) 在旁边写上距离
-                std::string dist_str = std::to_string(int(p_cam.z())) + "m";
-                cv::putText(cv_ptr->image, dist_str, cv::Point(u+5,v ),
-                            cv::FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255, 0, 0), 2);
-            }
-        }
-        // -------------------------------------------------------
-        // Step 5: 发布结果
-        // -------------------------------------------------------
-        pub_fusion_image_.publish(cv_ptr->toImageMsg());
-        ROS_INFO_STREAM("Projected " << pcl_cloud.points.size() 
-        << " radar points to image.");
-    }
-
-    void camInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg){
-        if(has_intrinsics_) return;
-
-        camera_intrinsic_ << msg->K[0], msg->K[1], msg->K[2],
-                             msg->K[3], msg->K[4], msg->K[5],
-                             msg->K[6], msg->K[7], msg->K[8];
-
-        has_intrinsics_ = true;
-        ROS_INFO_STREAM("\033[1;32m[Intrinsics Received]\033[0m fx: " 
-            << msg->K[0] << " cx: " << msg->K[2]);
+        sync_.reset(new message_filters::Synchronizer<MySyncPolicy>(
+            MySyncPolicy(10), yolo_sub_, lidar_sub_, radar_sub_
+        ));
         
-        // 既然拿到了内参，我们可以取消订阅以节省资源（可选）
-        sub_cam_info_.shutdown();
+        sync_->registerCallback(boost::bind(&FusionNode::fusionCallback, this, _1, _2, _3));
+
+        // 4. 发布融合结果
+        pub_markers_ = nh.advertise<visualization_msgs::MarkerArray>("/fusion/3d_markers", 1);
+
+        ROS_INFO("Fusion Node Started. Waiting for data...");
+    }
+    
+private:
+    tf2_ros::Buffer tf_buffer_;
+    tf2_ros::TransformListener tf_listener_;
+    
+    ros::Subscriber cam_info_sub_;
+    message_filters::Subscriber<ultralytics_ros::YoloResult> yolo_sub_;
+    message_filters::Subscriber<sensor_msgs::PointCloud2> lidar_sub_;
+    message_filters::Subscriber<sensor_msgs::PointCloud2> radar_sub_;
+
+    boost::shared_ptr<message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<
+        ultralytics_ros::YoloResult, sensor_msgs::PointCloud2, sensor_msgs::PointCloud2>>> sync_;
+
+    ros::Publisher pub_markers_;
+
+    // 相机内参
+    double fx_ = 0, fy_ = 0, cx_ = 0, cy_ = 0;
+    bool cam_ready_ = false;
+
+    void camInfoCallback(const sensor_msgs::CameraInfoConstPtr& msg) {
+        fx_ = msg->K[0]; fy_ = msg->K[4]; cx_ = msg->K[2]; cy_ = msg->K[5];
+        cam_ready_ = true;
+    }
+
+    void fusionCallback(
+        const ultralytics_ros::YoloResultConstPtr& yolo_msg,
+        const sensor_msgs::PointCloud2ConstPtr& lidar_msg,
+        const sensor_msgs::PointCloud2ConstPtr& radar_msg){
+            if (!cam_ready_) return;
+
+            // --- 1. 数据解析与坐标系准备 ---
+            pcl::PointCloud<pcl::PointXYZ>::Ptr lidar_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::fromROSMsg(*lidar_msg, *lidar_cloud);
+
+            pcl::PointCloud<rv_fusion::PointRadar>::Ptr radar_cloud(new pcl::PointCloud<rv_fusion::PointRadar>);
+            pcl::fromROSMsg(*radar_msg, *radar_cloud);
+
+            // C. 获取 TF 变换
+            // 1. 用于投影判断： Point_Source -> Cam_Front (用于判断点是否在图像框内)
+            // 2. 用于统一输出： Point_Source -> Base_Link (用于输出最终车辆坐标)
+            
+            Eigen::Affine3d T_base2cam; 
+            if (!getTransform("base_link", "cam_front", T_base2cam)) return;
+
+            Eigen::Affine3d T_lidar2cam, T_lidar2base;
+            if (!getTransform(lidar_msg->header.frame_id, "cam_front", T_lidar2cam)) return;
+            if (!getTransform(lidar_msg->header.frame_id, "base_link", T_lidar2base)) return;
+
+            // --- 2. 遍历 YOLO 检测框 ---
+            std::vector<FusedObject> fused_objects;
+            
+            if (yolo_msg->detections.detections.empty()) return;
+
+            for (const auto& det : yolo_msg->detections.detections) {
+                
+                // 解析 2D 框
+                double cx = det.bbox.center.x;
+                double cy = det.bbox.center.y;
+                double w  = det.bbox.size_x;
+                double h  = det.bbox.size_y;
+                int u_min = cx - w / 2; int u_max = cx + w / 2;
+                int v_min = cy - h / 2; int v_max = cy + h / 2;
+
+                // --- 3. 关联 LiDAR (为了精准的位置) ---
+                std::vector<Eigen::Vector3d> valid_lidar_points_base; // 存 base_link 下的坐标
+                
+                for (const auto& pt : lidar_cloud->points) {
+                    // 3.1 投影判断 (用 cam 坐标系)
+                    Eigen::Vector3d pt_lidar(pt.x, pt.y, pt.z);
+                    Eigen::Vector3d pt_cam = T_lidar2cam * pt_lidar;
+                    
+                    if (pt_cam.z() <= 1.0) continue; // 过滤太近的点
+
+                    cv::Point2f uv = project3Dto2D(pt_cam);
+                    if (uv.x >= u_min && uv.x <= u_max && uv.y >= v_min && uv.y <= v_max) {
+                        // 3.2 如果在框内，转到 base_link 保存
+                        valid_lidar_points_base.push_back(T_lidar2base * pt_lidar);
+                    }
+                }
+
+                // --- 4. 关联 Radar (为了精准的速度矢量) ---
+                std::vector<Eigen::Vector3d> valid_radar_vels; // 存速度矢量 (vx, vy, 0)
+                std::vector<Eigen::Vector3d> valid_radar_points_base; // 存位置 (备用)
+
+                for (const auto& pt : radar_cloud->points) {
+                    // 4.1 投影判断
+                    // 聚合后的雷达点 pt.x, pt.y, pt.z 已经在 base_link 下
+                    Eigen::Vector3d pt_base(pt.x, pt.y, pt.z);
+                    Eigen::Vector3d pt_cam = T_base2cam * pt_base; // 转到相机投影
+
+                    if (pt_cam.z() <= 1.0) continue;
+
+                    cv::Point2f uv = project3Dto2D(pt_cam);
+                    if (uv.x >= u_min && uv.x <= u_max && uv.y >= v_min && uv.y <= v_max) {
+                        // 4.2 提取速度矢量 (关键！)
+                        // pt.vx_comp 和 pt.vy_comp 已经在 base_link 下 (由聚合节点保证)
+                        valid_radar_vels.push_back(Eigen::Vector3d(pt.vx_comp, pt.vy_comp, 0));
+                        valid_radar_points_base.push_back(pt_base);
+                    }
+                }
+
+                // --- 5. 融合决策 ---
+                FusedObject obj;
+                // 获取类别和ID
+                obj.class_id = det.results.empty() ? "Obj" : std::to_string(det.results[0].id); // 这里存的是 Class ID
+                // 如果 YOLO 输出了跟踪 ID (Track ID)，通常在 id 字段，这里假设 results[0].id 是类别ID
+                // 如果 ultralytics_ros 的实现中 result[0].id 是 track_id，则直接使用
+                
+                // A. 位置融合 (优先 LiDAR)
+                if (!valid_lidar_points_base.empty()) {
+                    // 计算 LiDAR 点云质心 (Base Link)
+                    Eigen::Vector3d centroid(0,0,0);
+                    for(auto& p : valid_lidar_points_base) centroid += p;
+                    centroid /= valid_lidar_points_base.size();
+                    
+                    obj.x = centroid.x();
+                    obj.y = centroid.y();
+                    obj.z = centroid.z();
+                } 
+                else if (!valid_radar_points_base.empty()) {
+                    // 降级：使用 Radar 质心
+                    Eigen::Vector3d centroid(0,0,0);
+                    for(auto& p : valid_radar_points_base) centroid += p;
+                    centroid /= valid_radar_points_base.size();
+                    
+                    obj.x = centroid.x();
+                    obj.y = centroid.y();
+                    obj.z = centroid.z();
+                } else {
+                    continue; // 只有视觉，没有深度，跳过
+                }
+
+                // B. 速度融合 (使用 Radar 矢量平均)
+                if (!valid_radar_vels.empty()) {
+                    Eigen::Vector3d avg_vel(0,0,0);
+                    for(auto& v : valid_radar_vels) avg_vel += v;
+                    avg_vel /= valid_radar_vels.size();
+                    
+                    obj.vx = avg_vel.x();
+                    obj.vy = avg_vel.y();
+                } else {
+                    obj.vx = 0;
+                    obj.vy = 0;
+                }
+
+                fused_objects.push_back(obj);
+            }
+
+            // 6. 发布可视化 Markers
+            publishMarkers(fused_objects);
+        }
+
+    bool getTransform(const std::string& source, const std::string& target, Eigen::Affine3d& T) {
+        try {
+            geometry_msgs::TransformStamped tf = tf_buffer_.lookupTransform(
+                target, source, ros::Time(0), ros::Duration(0.1));
+            T = tf2::transformToEigen(tf);
+            return true;
+        } catch (tf2::TransformException& ex) {
+            ROS_WARN_THROTTLE(5, "TF Error (%s -> %s): %s", source.c_str(), target.c_str(), ex.what());
+            return false;
+        }
+    }
+
+    cv::Point2f project3Dto2D(const Eigen::Vector3d& pt) {
+        double u = fx_ * pt.x() / pt.z() + cx_;
+        double v = fy_ * pt.y() / pt.z() + cy_;
+        return cv::Point2f(u, v);
+    }
+
+    void publishMarkers(const std::vector<FusedObject>& objects) {
+        visualization_msgs::MarkerArray marker_array;
+        int id = 0;
+
+        for (const auto& obj : objects) {
+            // 1. 3D Bounding Box
+            visualization_msgs::Marker box;
+            box.header.frame_id = "base_link"; // 结果都在 base_link 下
+            box.header.stamp = ros::Time::now();
+            box.ns = "fusion_box";
+            box.id = id++;
+            box.type = visualization_msgs::Marker::CUBE;
+            box.action = visualization_msgs::Marker::ADD;
+            
+            box.pose.position.x = obj.x;
+            box.pose.position.y = obj.y;
+            box.pose.position.z = obj.z;
+            box.pose.orientation.w = 1.0;
+            
+            box.scale.x = 4.5; // 假定车长
+            box.scale.y = 2.0; // 假定车宽
+            box.scale.z = 1.5; 
+            
+            box.color.r = 0.0; box.color.g = 1.0; box.color.b = 0.0; box.color.a = 0.5;
+            box.lifetime = ros::Duration(0.1);
+
+            // 2. 速度箭头 (Visualization of Velocity Vector)
+            visualization_msgs::Marker arrow;
+            arrow.header.frame_id = "base_link";
+            arrow.header.stamp = ros::Time::now();
+            arrow.ns = "fusion_velocity";
+            arrow.id = id++;
+            arrow.type = visualization_msgs::Marker::ARROW;
+            arrow.action = visualization_msgs::Marker::ADD;
+            
+            // 起点
+            geometry_msgs::Point p_start;
+            p_start.x = obj.x; p_start.y = obj.y; p_start.z = obj.z + 1.0;
+            arrow.points.push_back(p_start);
+            
+            // 终点 (根据速度矢量延伸)
+            geometry_msgs::Point p_end;
+            p_end.x = obj.x + obj.vx; 
+            p_end.y = obj.y + obj.vy; 
+            p_end.z = obj.z + 1.0;
+            arrow.points.push_back(p_end);
+            
+            arrow.scale.x = 0.2; // 轴径
+            arrow.scale.y = 0.4; // 箭头径
+            arrow.color.r = 1.0; arrow.color.g = 0.0; arrow.color.b = 0.0; arrow.color.a = 1.0;
+            arrow.lifetime = ros::Duration(0.1);
+
+            // 3. 文字信息
+            visualization_msgs::Marker text;
+            text.header.frame_id = "base_link";
+            text.header.stamp = ros::Time::now();
+            text.ns = "fusion_text";
+            text.id = id++;
+            text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+            text.action = visualization_msgs::Marker::ADD;
+            
+            text.pose.position.x = obj.x;
+            text.pose.position.y = obj.y;
+            text.pose.position.z = obj.z + 2.0;
+            
+            double speed = sqrt(obj.vx*obj.vx + obj.vy*obj.vy);
+            std::stringstream ss;
+            ss << "ID:" << obj.class_id << "\n"
+               << "Vx:" << std::fixed << std::setprecision(1) << obj.vx << " Vy:" << obj.vy << "\n"
+               << "Speed:" << speed << "m/s";
+            
+            text.text = ss.str();
+            text.scale.z = 0.5; 
+            text.color.r = 1.0; text.color.g = 1.0; text.color.b = 1.0; text.color.a = 1.0;
+            text.lifetime = ros::Duration(0.1);
+
+            marker_array.markers.push_back(box);
+            marker_array.markers.push_back(arrow);
+            marker_array.markers.push_back(text);
+        }
+        pub_markers_.publish(marker_array);
     }
 };
 
-}
-
-int main(int argc, char** argv){
-    ros::init(argc, argv, "radar_camera_fusion_node");
-    radar_fusion::Fusion_node node;
+int main(int argc, char** argv) {
+    ros::init(argc, argv, "fusion_node");
+    FusionNode node;
     ros::spin();
     return 0;
 }

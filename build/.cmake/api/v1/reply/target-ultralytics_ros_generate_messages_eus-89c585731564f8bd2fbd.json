@@ -1,0 +1,144 @@
+{
+	"backtrace" : 4,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_custom_target",
+			"include",
+			"generate_messages",
+			"add_dependencies"
+		],
+		"files" : 
+		[
+			"/home/qjj/桌面/RV_Fusion_ws/build/ultralytics_ros/cmake/ultralytics_ros-genmsg.cmake",
+			"/opt/ros/noetic/share/genmsg/cmake/genmsg-extras.cmake",
+			"ultralytics_ros/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 2
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 36,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 307,
+				"parent" : 1
+			},
+			{
+				"file" : 0,
+				"parent" : 2
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 79,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 86,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 224,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 221,
+				"parent" : 3
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 227,
+				"parent" : 3
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 5,
+			"id" : "_ultralytics_ros_generate_messages_check_deps_YoloResult::@39c421ccf752e62cf417"
+		},
+		{
+			"backtrace" : 6,
+			"id" : "std_msgs_generate_messages_eus::@39c421ccf752e62cf417"
+		},
+		{
+			"backtrace" : 7,
+			"id" : "sensor_msgs_generate_messages_eus::@39c421ccf752e62cf417"
+		},
+		{
+			"backtrace" : 8,
+			"id" : "vision_msgs_generate_messages_eus::@39c421ccf752e62cf417"
+		}
+	],
+	"id" : "ultralytics_ros_generate_messages_eus::@39c421ccf752e62cf417",
+	"name" : "ultralytics_ros_generate_messages_eus",
+	"paths" : 
+	{
+		"build" : "ultralytics_ros",
+		"source" : "ultralytics_ros"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"name" : "CMake Rules",
+			"sourceIndexes" : 
+			[
+				1,
+				2,
+				3
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 4,
+			"isGenerated" : true,
+			"path" : "/home/qjj/桌面/RV_Fusion_ws/build/ultralytics_ros/CMakeFiles/ultralytics_ros_generate_messages_eus",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "/home/qjj/桌面/RV_Fusion_ws/build/ultralytics_ros/CMakeFiles/ultralytics_ros_generate_messages_eus.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "/home/qjj/桌面/RV_Fusion_ws/devel/share/roseus/ros/ultralytics_ros/msg/YoloResult.l.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "/home/qjj/桌面/RV_Fusion_ws/devel/share/roseus/ros/ultralytics_ros/manifest.l.rule",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "UTILITY"
+}

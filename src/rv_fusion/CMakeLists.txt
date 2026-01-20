@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   cv_bridge
   image_transport
+  ultralytics_ros
   )
   find_package(PCL REQUIRED)
 ## System dependencies are found with CMake's conventions
@@ -114,10 +115,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES rv_fusion
-#  CATKIN_DEPENDS other_catkin_pkg
-#  DEPENDS system_lib
+INCLUDE_DIRS include
+LIBRARIES rv_fusion
+CATKIN_DEPENDS ultralytics_ros
+DEPENDS system_lib
 )
 
 ###########

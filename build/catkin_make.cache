@@ -1,2 +1,2 @@
-rv_fusion
+rv_fusion:ultralytics_ros
 -DCATKIN_DEVEL_PREFIX=/home/qjj/桌面/RV_Fusion_ws/devel -DCMAKE_INSTALL_PREFIX=/home/qjj/桌面/RV_Fusion_ws/install -G Unix Makefiles

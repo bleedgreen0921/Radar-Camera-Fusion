@@ -3,6 +3,6 @@ prefix=/home/qjj/桌面/RV_Fusion_ws/install
 Name: rv_fusion
 Description: Description of rv_fusion
 Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib -lrv_fusion
+Requires: ultralytics_ros
