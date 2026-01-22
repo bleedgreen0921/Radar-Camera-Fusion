@@ -19,7 +19,7 @@ add_custom_target(ultralytics_ros_generate_messages ALL)
 
 get_filename_component(_filename "/home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg" NAME_WE)
 add_custom_target(_ultralytics_ros_generate_messages_check_deps_${_filename}
-  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "ultralytics_ros" "/home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg" "sensor_msgs/Image:geometry_msgs/Quaternion:geometry_msgs/Point:geometry_msgs/Pose2D:geometry_msgs/Pose:vision_msgs/Detection2D:std_msgs/Header:geometry_msgs/PoseWithCovariance:vision_msgs/Detection2DArray:vision_msgs/BoundingBox2D:vision_msgs/ObjectHypothesisWithPose"
+  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "ultralytics_ros" "/home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg" "vision_msgs/Detection2D:std_msgs/Header:vision_msgs/Detection2DArray:geometry_msgs/Quaternion:geometry_msgs/Point:vision_msgs/BoundingBox2D:geometry_msgs/PoseWithCovariance:geometry_msgs/Pose:vision_msgs/ObjectHypothesisWithPose:geometry_msgs/Pose2D:sensor_msgs/Image"
 )
 
 #
@@ -31,7 +31,7 @@ add_custom_target(_ultralytics_ros_generate_messages_check_deps_${_filename}
 _generate_msg_cpp(ultralytics_ros
   "/home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg"
   "${MSG_I_FLAGS}"
-  "/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Quaternion.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Point.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose2D.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2D.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/PoseWithCovariance.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2DArray.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/BoundingBox2D.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/ObjectHypothesisWithPose.msg"
+  "/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2D.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2DArray.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Quaternion.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Point.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/BoundingBox2D.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/PoseWithCovariance.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/ObjectHypothesisWithPose.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose2D.msg;/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg"
   ${CATKIN_DEVEL_PREFIX}/${gencpp_INSTALL_DIR}/ultralytics_ros
 )
 
@@ -64,7 +64,7 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS ultralytics_ros_generate_messages_c
 _generate_msg_eus(ultralytics_ros
   "/home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg"
   "${MSG_I_FLAGS}"
-  "/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Quaternion.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Point.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose2D.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2D.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/PoseWithCovariance.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2DArray.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/BoundingBox2D.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/ObjectHypothesisWithPose.msg"
+  "/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2D.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2DArray.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Quaternion.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Point.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/BoundingBox2D.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/PoseWithCovariance.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/ObjectHypothesisWithPose.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose2D.msg;/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg"
   ${CATKIN_DEVEL_PREFIX}/${geneus_INSTALL_DIR}/ultralytics_ros
 )
 
@@ -97,7 +97,7 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS ultralytics_ros_generate_messages_e
 _generate_msg_lisp(ultralytics_ros
   "/home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg"
   "${MSG_I_FLAGS}"
-  "/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Quaternion.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Point.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose2D.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2D.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/PoseWithCovariance.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2DArray.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/BoundingBox2D.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/ObjectHypothesisWithPose.msg"
+  "/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2D.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2DArray.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Quaternion.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Point.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/BoundingBox2D.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/PoseWithCovariance.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/ObjectHypothesisWithPose.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose2D.msg;/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg"
   ${CATKIN_DEVEL_PREFIX}/${genlisp_INSTALL_DIR}/ultralytics_ros
 )
 
@@ -130,7 +130,7 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS ultralytics_ros_generate_messages_l
 _generate_msg_nodejs(ultralytics_ros
   "/home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg"
   "${MSG_I_FLAGS}"
-  "/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Quaternion.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Point.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose2D.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2D.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/PoseWithCovariance.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2DArray.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/BoundingBox2D.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/ObjectHypothesisWithPose.msg"
+  "/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2D.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2DArray.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Quaternion.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Point.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/BoundingBox2D.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/PoseWithCovariance.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/ObjectHypothesisWithPose.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose2D.msg;/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg"
   ${CATKIN_DEVEL_PREFIX}/${gennodejs_INSTALL_DIR}/ultralytics_ros
 )
 
@@ -163,7 +163,7 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS ultralytics_ros_generate_messages_n
 _generate_msg_py(ultralytics_ros
   "/home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg"
   "${MSG_I_FLAGS}"
-  "/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Quaternion.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Point.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose2D.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2D.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/PoseWithCovariance.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2DArray.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/BoundingBox2D.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/ObjectHypothesisWithPose.msg"
+  "/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2D.msg;/opt/ros/noetic/share/std_msgs/cmake/../msg/Header.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/Detection2DArray.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Quaternion.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Point.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/BoundingBox2D.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/PoseWithCovariance.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose.msg;/opt/ros/noetic/share/vision_msgs/cmake/../msg/ObjectHypothesisWithPose.msg;/opt/ros/noetic/share/geometry_msgs/cmake/../msg/Pose2D.msg;/opt/ros/noetic/share/sensor_msgs/cmake/../msg/Image.msg"
   ${CATKIN_DEVEL_PREFIX}/${genpy_INSTALL_DIR}/ultralytics_ros
 )
 

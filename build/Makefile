@@ -1624,6 +1624,19 @@ nuscenes2bag_generate_messages_eus/fast:
 .PHONY : nuscenes2bag_generate_messages_eus/fast
 
 #=============================================================================
+# Target rules for targets named radar_front_aggregator_node
+
+# Build rule for target.
+radar_front_aggregator_node: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 radar_front_aggregator_node
+.PHONY : radar_front_aggregator_node
+
+# fast build rule for target.
+radar_front_aggregator_node/fast:
+	$(MAKE) -f rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/build.make rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/build
+.PHONY : radar_front_aggregator_node/fast
+
+#=============================================================================
 # Target rules for targets named radar_aggregator_node
 
 # Build rule for target.
@@ -1713,6 +1726,19 @@ projection_node: cmake_check_build_system
 projection_node/fast:
 	$(MAKE) -f rv_fusion/CMakeFiles/projection_node.dir/build.make rv_fusion/CMakeFiles/projection_node.dir/build
 .PHONY : projection_node/fast
+
+#=============================================================================
+# Target rules for targets named fusion_node
+
+# Build rule for target.
+fusion_node: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 fusion_node
+.PHONY : fusion_node
+
+# fast build rule for target.
+fusion_node/fast:
+	$(MAKE) -f rv_fusion/CMakeFiles/fusion_node.dir/build.make rv_fusion/CMakeFiles/fusion_node.dir/build
+.PHONY : fusion_node/fast
 
 # Help Target
 help:
@@ -1839,6 +1865,7 @@ help:
 	@echo "... topic_tools_generate_messages_lisp"
 	@echo "... nuscenes2bag_generate_messages_cpp"
 	@echo "... nuscenes2bag_generate_messages_eus"
+	@echo "... radar_front_aggregator_node"
 	@echo "... radar_aggregator_node"
 	@echo "... nuscenes2bag_generate_messages_nodejs"
 	@echo "... radar_cluster_node"
@@ -1846,6 +1873,7 @@ help:
 	@echo "... nuscenes2bag_generate_messages_lisp"
 	@echo "... nuscenes2bag_generate_messages_py"
 	@echo "... projection_node"
+	@echo "... fusion_node"
 .PHONY : help
 
 

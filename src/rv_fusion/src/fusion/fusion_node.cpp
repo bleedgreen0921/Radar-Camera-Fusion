@@ -23,6 +23,12 @@
 #include <tf2_eigen/tf2_eigen.h>
 #include <Eigen/Dense>
 
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
+#include <opencv2/opencv.hpp>
+
 #include "common/point_types.h"
 
 struct FusedObject{

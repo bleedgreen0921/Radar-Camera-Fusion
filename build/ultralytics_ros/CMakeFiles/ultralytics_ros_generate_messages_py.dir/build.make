@@ -59,17 +59,17 @@ ultralytics_ros/CMakeFiles/ultralytics_ros_generate_messages_py: /home/qjj/桌�
 
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/lib/genpy/genmsg_py.py
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg
-/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/sensor_msgs/msg/Image.msg
-/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/geometry_msgs/msg/Quaternion.msg
-/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/geometry_msgs/msg/Point.msg
-/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/geometry_msgs/msg/Pose2D.msg
-/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/geometry_msgs/msg/Pose.msg
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/vision_msgs/msg/Detection2D.msg
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/std_msgs/msg/Header.msg
-/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/geometry_msgs/msg/PoseWithCovariance.msg
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/vision_msgs/msg/Detection2DArray.msg
+/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/geometry_msgs/msg/Quaternion.msg
+/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/geometry_msgs/msg/Point.msg
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/vision_msgs/msg/BoundingBox2D.msg
+/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/geometry_msgs/msg/PoseWithCovariance.msg
+/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/geometry_msgs/msg/Pose.msg
 /home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/vision_msgs/msg/ObjectHypothesisWithPose.msg
+/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/geometry_msgs/msg/Pose2D.msg
+/home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg/_YoloResult.py: /opt/ros/noetic/share/sensor_msgs/msg/Image.msg
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/qjj/桌面/RV_Fusion_ws/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating Python from MSG ultralytics_ros/YoloResult"
 	cd /home/qjj/桌面/RV_Fusion_ws/build/ultralytics_ros && ../catkin_generated/env_cached.sh /usr/bin/python3 /opt/ros/noetic/share/genpy/cmake/../../../lib/genpy/genmsg_py.py /home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg -Iultralytics_ros:/home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg -Isensor_msgs:/opt/ros/noetic/share/sensor_msgs/cmake/../msg -Istd_msgs:/opt/ros/noetic/share/std_msgs/cmake/../msg -Ivision_msgs:/opt/ros/noetic/share/vision_msgs/cmake/../msg -Igeometry_msgs:/opt/ros/noetic/share/geometry_msgs/cmake/../msg -p ultralytics_ros -o /home/qjj/桌面/RV_Fusion_ws/devel/lib/python3/dist-packages/ultralytics_ros/msg
 

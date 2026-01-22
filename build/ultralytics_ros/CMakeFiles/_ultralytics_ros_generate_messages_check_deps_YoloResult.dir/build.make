@@ -54,7 +54,7 @@ CMAKE_BINARY_DIR = /home/qjj/桌面/RV_Fusion_ws/build
 include ultralytics_ros/CMakeFiles/_ultralytics_ros_generate_messages_check_deps_YoloResult.dir/progress.make
 
 ultralytics_ros/CMakeFiles/_ultralytics_ros_generate_messages_check_deps_YoloResult:
-	cd /home/qjj/桌面/RV_Fusion_ws/build/ultralytics_ros && ../catkin_generated/env_cached.sh /usr/bin/python3 /opt/ros/noetic/share/genmsg/cmake/../../../lib/genmsg/genmsg_check_deps.py ultralytics_ros /home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg sensor_msgs/Image:geometry_msgs/Quaternion:geometry_msgs/Point:geometry_msgs/Pose2D:geometry_msgs/Pose:vision_msgs/Detection2D:std_msgs/Header:geometry_msgs/PoseWithCovariance:vision_msgs/Detection2DArray:vision_msgs/BoundingBox2D:vision_msgs/ObjectHypothesisWithPose
+	cd /home/qjj/桌面/RV_Fusion_ws/build/ultralytics_ros && ../catkin_generated/env_cached.sh /usr/bin/python3 /opt/ros/noetic/share/genmsg/cmake/../../../lib/genmsg/genmsg_check_deps.py ultralytics_ros /home/qjj/桌面/RV_Fusion_ws/src/ultralytics_ros/msg/YoloResult.msg vision_msgs/Detection2D:std_msgs/Header:vision_msgs/Detection2DArray:geometry_msgs/Quaternion:geometry_msgs/Point:vision_msgs/BoundingBox2D:geometry_msgs/PoseWithCovariance:geometry_msgs/Pose:vision_msgs/ObjectHypothesisWithPose:geometry_msgs/Pose2D:sensor_msgs/Image
 
 _ultralytics_ros_generate_messages_check_deps_YoloResult: ultralytics_ros/CMakeFiles/_ultralytics_ros_generate_messages_check_deps_YoloResult
 _ultralytics_ros_generate_messages_check_deps_YoloResult: ultralytics_ros/CMakeFiles/_ultralytics_ros_generate_messages_check_deps_YoloResult.dir/build.make

@@ -198,6 +198,21 @@ nuscenes2bag_generate_messages_eus/fast:
 .PHONY : nuscenes2bag_generate_messages_eus/fast
 
 # Convenience name for target.
+rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/rule:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f CMakeFiles/Makefile2 rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/rule
+.PHONY : rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/rule
+
+# Convenience name for target.
+radar_front_aggregator_node: rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/rule
+
+.PHONY : radar_front_aggregator_node
+
+# fast build rule for target.
+radar_front_aggregator_node/fast:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/build.make rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/build
+.PHONY : radar_front_aggregator_node/fast
+
+# Convenience name for target.
 rv_fusion/CMakeFiles/radar_aggregator_node.dir/rule:
 	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f CMakeFiles/Makefile2 rv_fusion/CMakeFiles/radar_aggregator_node.dir/rule
 .PHONY : rv_fusion/CMakeFiles/radar_aggregator_node.dir/rule
@@ -301,6 +316,21 @@ projection_node: rv_fusion/CMakeFiles/projection_node.dir/rule
 projection_node/fast:
 	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/projection_node.dir/build.make rv_fusion/CMakeFiles/projection_node.dir/build
 .PHONY : projection_node/fast
+
+# Convenience name for target.
+rv_fusion/CMakeFiles/fusion_node.dir/rule:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f CMakeFiles/Makefile2 rv_fusion/CMakeFiles/fusion_node.dir/rule
+.PHONY : rv_fusion/CMakeFiles/fusion_node.dir/rule
+
+# Convenience name for target.
+fusion_node: rv_fusion/CMakeFiles/fusion_node.dir/rule
+
+.PHONY : fusion_node
+
+# fast build rule for target.
+fusion_node/fast:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/fusion_node.dir/build.make rv_fusion/CMakeFiles/fusion_node.dir/build
+.PHONY : fusion_node/fast
 
 __/radar_to_pcl_trans.o: __/radar_to_pcl_trans.cpp.o
 
@@ -410,6 +440,33 @@ src/data_assocation/association_manager.cpp.s:
 	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_cluster_node.dir/build.make rv_fusion/CMakeFiles/radar_cluster_node.dir/src/data_assocation/association_manager.cpp.s
 .PHONY : src/data_assocation/association_manager.cpp.s
 
+src/fusion/fusion_node.o: src/fusion/fusion_node.cpp.o
+
+.PHONY : src/fusion/fusion_node.o
+
+# target to build an object file
+src/fusion/fusion_node.cpp.o:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/fusion_node.dir/build.make rv_fusion/CMakeFiles/fusion_node.dir/src/fusion/fusion_node.cpp.o
+.PHONY : src/fusion/fusion_node.cpp.o
+
+src/fusion/fusion_node.i: src/fusion/fusion_node.cpp.i
+
+.PHONY : src/fusion/fusion_node.i
+
+# target to preprocess a source file
+src/fusion/fusion_node.cpp.i:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/fusion_node.dir/build.make rv_fusion/CMakeFiles/fusion_node.dir/src/fusion/fusion_node.cpp.i
+.PHONY : src/fusion/fusion_node.cpp.i
+
+src/fusion/fusion_node.s: src/fusion/fusion_node.cpp.s
+
+.PHONY : src/fusion/fusion_node.s
+
+# target to generate assembly for a file
+src/fusion/fusion_node.cpp.s:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/fusion_node.dir/build.make rv_fusion/CMakeFiles/fusion_node.dir/src/fusion/fusion_node.cpp.s
+.PHONY : src/fusion/fusion_node.cpp.s
+
 src/fusion/projection_node.o: src/fusion/projection_node.cpp.o
 
 .PHONY : src/fusion/projection_node.o
@@ -518,6 +575,33 @@ src/radar_aggregator/radar_aggregator_node.cpp.s:
 	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_aggregator_node.dir/build.make rv_fusion/CMakeFiles/radar_aggregator_node.dir/src/radar_aggregator/radar_aggregator_node.cpp.s
 .PHONY : src/radar_aggregator/radar_aggregator_node.cpp.s
 
+src/radar_aggregator/radar_front_aggregator.o: src/radar_aggregator/radar_front_aggregator.cpp.o
+
+.PHONY : src/radar_aggregator/radar_front_aggregator.o
+
+# target to build an object file
+src/radar_aggregator/radar_front_aggregator.cpp.o:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/build.make rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/src/radar_aggregator/radar_front_aggregator.cpp.o
+.PHONY : src/radar_aggregator/radar_front_aggregator.cpp.o
+
+src/radar_aggregator/radar_front_aggregator.i: src/radar_aggregator/radar_front_aggregator.cpp.i
+
+.PHONY : src/radar_aggregator/radar_front_aggregator.i
+
+# target to preprocess a source file
+src/radar_aggregator/radar_front_aggregator.cpp.i:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/build.make rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/src/radar_aggregator/radar_front_aggregator.cpp.i
+.PHONY : src/radar_aggregator/radar_front_aggregator.cpp.i
+
+src/radar_aggregator/radar_front_aggregator.s: src/radar_aggregator/radar_front_aggregator.cpp.s
+
+.PHONY : src/radar_aggregator/radar_front_aggregator.s
+
+# target to generate assembly for a file
+src/radar_aggregator/radar_front_aggregator.cpp.s:
+	cd /home/qjj/桌面/RV_Fusion_ws/build && $(MAKE) -f rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/build.make rv_fusion/CMakeFiles/radar_front_aggregator_node.dir/src/radar_aggregator/radar_front_aggregator.cpp.s
+.PHONY : src/radar_aggregator/radar_front_aggregator.cpp.s
+
 src/utils/hungarian.o: src/utils/hungarian.cpp.o
 
 .PHONY : src/utils/hungarian.o
@@ -554,9 +638,10 @@ help:
 	@echo "... install/strip"
 	@echo "... install/local"
 	@echo "... install"
+	@echo "... list_install_components"
 	@echo "... nuscenes2bag_generate_messages_cpp"
 	@echo "... nuscenes2bag_generate_messages_eus"
-	@echo "... list_install_components"
+	@echo "... radar_front_aggregator_node"
 	@echo "... radar_aggregator_node"
 	@echo "... test"
 	@echo "... nuscenes2bag_generate_messages_nodejs"
@@ -567,6 +652,7 @@ help:
 	@echo "... nuscenes2bag_generate_messages_lisp"
 	@echo "... nuscenes2bag_generate_messages_py"
 	@echo "... projection_node"
+	@echo "... fusion_node"
 	@echo "... __/radar_to_pcl_trans.o"
 	@echo "... __/radar_to_pcl_trans.i"
 	@echo "... __/radar_to_pcl_trans.s"
@@ -579,6 +665,9 @@ help:
 	@echo "... src/data_assocation/association_manager.o"
 	@echo "... src/data_assocation/association_manager.i"
 	@echo "... src/data_assocation/association_manager.s"
+	@echo "... src/fusion/fusion_node.o"
+	@echo "... src/fusion/fusion_node.i"
+	@echo "... src/fusion/fusion_node.s"
 	@echo "... src/fusion/projection_node.o"
 	@echo "... src/fusion/projection_node.i"
 	@echo "... src/fusion/projection_node.s"
@@ -591,6 +680,9 @@ help:
 	@echo "... src/radar_aggregator/radar_aggregator_node.o"
 	@echo "... src/radar_aggregator/radar_aggregator_node.i"
 	@echo "... src/radar_aggregator/radar_aggregator_node.s"
+	@echo "... src/radar_aggregator/radar_front_aggregator.o"
+	@echo "... src/radar_aggregator/radar_front_aggregator.i"
+	@echo "... src/radar_aggregator/radar_front_aggregator.s"
 	@echo "... src/utils/hungarian.o"
 	@echo "... src/utils/hungarian.i"
 	@echo "... src/utils/hungarian.s"

@@ -170,6 +170,20 @@ ${catkin_LIBRARIES}
 ${PCL_LIBRARIES}
 )
 
+add_executable(radar_front_aggregator_node src/radar_aggregator/radar_front_aggregator.cpp)
+target_link_libraries(radar_front_aggregator_node 
+${catkin_LIBRARIES}
+${PCL_LIBRARIES}
+${OpenCV_LIBRARIES}
+)
+
+add_executable(fusion_node src/fusion/fusion_node.cpp)
+target_link_libraries(fusion_node 
+${catkin_LIBRARIES}
+${PCL_LIBRARIES}
+${OpenCV_LIBRARIES}
+)
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
