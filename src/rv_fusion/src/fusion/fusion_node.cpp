@@ -1,19 +1,23 @@
 /**
- * @file fusion_node.cpp
- * @brief YOLO图像、毫米波雷达、激光雷达时空同步节点
- * @details 使用 message_filters::ApproximateTime 策略实现“拉链式”数据对齐
+ * fusion_node.cpp
+ * 功能：多传感器后融合 (Camera + LiDAR + Radar)
+ * 特性：
+ * 1. 4路时间同步 (Image, YOLO, LiDAR, Radar)
+ * 2. 视锥体关联 (Frustum Association)
+ * 3. 状态估计 (LiDAR定位置, Radar定速度)
+ * 4. 重绘法 (Redraw): 在原始图像上绘制 3D 边界框
  */
 
 #include <ros/ros.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <ultralytics_ros/YoloResult.h> 
 #include <visualization_msgs/MarkerArray.h>
-
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
 
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
@@ -32,12 +36,47 @@
 #include "common/point_types.h"
 
 struct FusedObject{
-    std::string class_id; // 类别
-    int track_id;         // YOLO 的 ID
+    std::string class_id;
     double x, y, z; 
     double vx, vy; 
     double width, height, length;
 };
+
+// 定义尺寸结构体
+struct BoxDim {
+    double length; // x 方向
+    double width;  // y 方向
+    double height; // z 方向
+};
+
+// 辅助函数：根据类别ID获取经验尺寸
+BoxDim getDimByClass(const std::string& class_id) {
+    BoxDim dim = {1.0, 1.0, 1.0}; 
+
+    // 注意：class_id 可能是 "0" (int转string) 或者 "person" (标签名)，取决于你的实现
+    int id = -1;
+    try {
+        id = std::stoi(class_id);
+    } catch (...) {}
+
+    if (id == 0 || class_id == "person") {
+        return {0.5, 0.5, 1.7}; // 人
+    } 
+    else if (id == 1 || class_id == "bicycle" || id == 3 || class_id == "motorcycle") {
+        return {1.5, 0.6, 1.2}; // 两轮车
+    }
+    else if (id == 2 || class_id == "car") {
+        return {4.5, 2.0, 1.6}; // 轿车
+    }
+    else if (id == 5 || class_id == "bus") {
+        return {12.0, 3.0, 3.2}; // 巴士
+    }
+    else if (id == 7 || class_id == "truck") {
+        return {8.0, 2.5, 3.0}; // 卡车
+    }
+    
+    return dim;
+}
 
 class FusionNode{
 
@@ -246,6 +285,9 @@ private:
         int id = 0;
 
         for (const auto& obj : objects) {
+            // --- 获取动态尺寸 ---
+            BoxDim dim = getDimByClass(obj.class_id);
+
             // 1. 3D Bounding Box
             visualization_msgs::Marker box;
             box.header.frame_id = "base_link"; // 结果都在 base_link 下
@@ -260,11 +302,23 @@ private:
             box.pose.position.z = obj.z;
             box.pose.orientation.w = 1.0;
             
-            box.scale.x = 4.5; // 假定车长
-            box.scale.y = 2.0; // 假定车宽
-            box.scale.z = 1.5; 
+            // // 检测框大小不可修改，不可取
+            // box.scale.x = 4.5; // 假定车长
+            // box.scale.y = 2.0; // 假定车宽
+            // box.scale.z = 1.5; 
+
+            // 使用查表得到的尺寸
+            box.scale.x = dim.length; 
+            box.scale.y = dim.width;  
+            box.scale.z = dim.height;
             
-            box.color.r = 0.0; box.color.g = 1.0; box.color.b = 0.0; box.color.a = 0.5;
+            // 根据类别设置不同颜色
+            if (obj.class_id == "0" || obj.class_id == "person") {
+                box.color.r = 1.0; box.color.g = 1.0; box.color.b = 0.0; // 人显示黄色
+            } else {
+                box.color.r = 0.0; box.color.g = 1.0; box.color.b = 0.0; // 车显示绿色
+            }
+            box.color.a = 0.5;
             box.lifetime = ros::Duration(0.1);
 
             // 2. 速度箭头 (Visualization of Velocity Vector)
@@ -278,7 +332,7 @@ private:
             
             // 起点
             geometry_msgs::Point p_start;
-            p_start.x = obj.x; p_start.y = obj.y; p_start.z = obj.z + 1.0;
+            p_start.x = obj.x; p_start.y = obj.y; p_start.z = obj.z + dim.height / 2.0 + 0.5;
             arrow.points.push_back(p_start);
             
             // 终点 (根据速度矢量延伸)

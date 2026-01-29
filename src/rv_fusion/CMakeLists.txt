@@ -132,6 +132,7 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     ${Eigen3_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -142,7 +143,9 @@ include_directories(
 add_executable(radar_aggregator_node src/radar_aggregator/radar_aggregator_node.cpp)
 target_link_libraries(radar_aggregator_node 
 ${catkin_LIBRARIES}
-${PCL_LIBRARIES})
+${PCL_LIBRARIES}
+${OpenCV_INCLUDE_DIRS}
+)
 
 add_executable(radar_cluster_node 
   src/cluster/radar_cluster_node.cpp 
@@ -155,6 +158,7 @@ add_executable(radar_cluster_node
 target_link_libraries(radar_cluster_node
 ${catkin_LIBRARIES}
 ${PCL_LIBRARIES}
+${OpenCV_INCLUDE_DIRS}
 )
 
 add_executable(projection_node src/fusion/projection_node.cpp)
@@ -168,6 +172,7 @@ add_executable(radar_converter_node /home/qjj/桌面/RV_Fusion_ws/src/radar_to_p
 target_link_libraries(radar_converter_node
 ${catkin_LIBRARIES}
 ${PCL_LIBRARIES}
+${OpenCV_INCLUDE_DIRS}
 )
 
 add_executable(radar_front_aggregator_node src/radar_aggregator/radar_front_aggregator.cpp)
